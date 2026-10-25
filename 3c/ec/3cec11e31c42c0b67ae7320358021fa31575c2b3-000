@@ -1,0 +1,153 @@
+/Users/zenray/Library/Python/3.9/lib/python/site-packages/numpy/linalg/_linalg.py:3220: RuntimeWarning: divide by zero encountered in matmul
+  return _core_matmul(x1, x2)
+/Users/zenray/Library/Python/3.9/lib/python/site-packages/numpy/linalg/_linalg.py:3220: RuntimeWarning: overflow encountered in matmul
+  return _core_matmul(x1, x2)
+/Users/zenray/Library/Python/3.9/lib/python/site-packages/numpy/linalg/_linalg.py:3220: RuntimeWarning: invalid value encountered in matmul
+  return _core_matmul(x1, x2)
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:65: RuntimeWarning: divide by zero encountered in matmul
+  g = np.linalg.pinv(bf) @ d @ np.linalg.pinv(tt).T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:65: RuntimeWarning: overflow encountered in matmul
+  g = np.linalg.pinv(bf) @ d @ np.linalg.pinv(tt).T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:65: RuntimeWarning: invalid value encountered in matmul
+  g = np.linalg.pinv(bf) @ d @ np.linalg.pinv(tt).T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:67: RuntimeWarning: divide by zero encountered in matmul
+  r = d - bf @ g @ tt.T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:67: RuntimeWarning: overflow encountered in matmul
+  r = d - bf @ g @ tt.T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:67: RuntimeWarning: invalid value encountered in matmul
+  r = d - bf @ g @ tt.T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:68: RuntimeWarning: divide by zero encountered in matmul
+  g += np.linalg.pinv(bf) @ (r * w) @ np.linalg.pinv(tt).T / np.maximum(w.mean(), 1e-3)
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:68: RuntimeWarning: overflow encountered in matmul
+  g += np.linalg.pinv(bf) @ (r * w) @ np.linalg.pinv(tt).T / np.maximum(w.mean(), 1e-3)
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:68: RuntimeWarning: invalid value encountered in matmul
+  g += np.linalg.pinv(bf) @ (r * w) @ np.linalg.pinv(tt).T / np.maximum(w.mean(), 1e-3)
+{"ref": "10-Mail-Open", "dirtyVsClean": 97.88, "cleanedVsClean": 99.25, "reproVsClean": 97.9, "floorDb": [13.96, 2.18, 4.66], "excessPct": [1.55, 1.72, 2.79], "linesW": [92.07, 91.81, 84.4], "seconds": 209}
+/Users/zenray/Library/Python/3.9/lib/python/site-packages/numpy/linalg/_linalg.py:3220: RuntimeWarning: divide by zero encountered in matmul
+  return _core_matmul(x1, x2)
+/Users/zenray/Library/Python/3.9/lib/python/site-packages/numpy/linalg/_linalg.py:3220: RuntimeWarning: overflow encountered in matmul
+  return _core_matmul(x1, x2)
+/Users/zenray/Library/Python/3.9/lib/python/site-packages/numpy/linalg/_linalg.py:3220: RuntimeWarning: invalid value encountered in matmul
+  return _core_matmul(x1, x2)
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:65: RuntimeWarning: divide by zero encountered in matmul
+  g = np.linalg.pinv(bf) @ d @ np.linalg.pinv(tt).T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:65: RuntimeWarning: overflow encountered in matmul
+  g = np.linalg.pinv(bf) @ d @ np.linalg.pinv(tt).T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:65: RuntimeWarning: invalid value encountered in matmul
+  g = np.linalg.pinv(bf) @ d @ np.linalg.pinv(tt).T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:67: RuntimeWarning: divide by zero encountered in matmul
+  r = d - bf @ g @ tt.T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:67: RuntimeWarning: overflow encountered in matmul
+  r = d - bf @ g @ tt.T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:67: RuntimeWarning: invalid value encountered in matmul
+  r = d - bf @ g @ tt.T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:68: RuntimeWarning: divide by zero encountered in matmul
+  g += np.linalg.pinv(bf) @ (r * w) @ np.linalg.pinv(tt).T / np.maximum(w.mean(), 1e-3)
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:68: RuntimeWarning: overflow encountered in matmul
+  g += np.linalg.pinv(bf) @ (r * w) @ np.linalg.pinv(tt).T / np.maximum(w.mean(), 1e-3)
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:68: RuntimeWarning: invalid value encountered in matmul
+  g += np.linalg.pinv(bf) @ (r * w) @ np.linalg.pinv(tt).T / np.maximum(w.mean(), 1e-3)
+{"ref": "12-Denied", "dirtyVsClean": 99.25, "cleanedVsClean": 99.74, "reproVsClean": 98.32, "floorDb": [30.77, 19.05, 18.81], "excessPct": [2.47, 0.64, 1.53], "linesW": [74.75, 75.75, 60.59], "seconds": 160}
+/Users/zenray/Library/Python/3.9/lib/python/site-packages/numpy/linalg/_linalg.py:3220: RuntimeWarning: divide by zero encountered in matmul
+  return _core_matmul(x1, x2)
+/Users/zenray/Library/Python/3.9/lib/python/site-packages/numpy/linalg/_linalg.py:3220: RuntimeWarning: overflow encountered in matmul
+  return _core_matmul(x1, x2)
+/Users/zenray/Library/Python/3.9/lib/python/site-packages/numpy/linalg/_linalg.py:3220: RuntimeWarning: invalid value encountered in matmul
+  return _core_matmul(x1, x2)
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:65: RuntimeWarning: divide by zero encountered in matmul
+  g = np.linalg.pinv(bf) @ d @ np.linalg.pinv(tt).T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:65: RuntimeWarning: overflow encountered in matmul
+  g = np.linalg.pinv(bf) @ d @ np.linalg.pinv(tt).T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:65: RuntimeWarning: invalid value encountered in matmul
+  g = np.linalg.pinv(bf) @ d @ np.linalg.pinv(tt).T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:67: RuntimeWarning: divide by zero encountered in matmul
+  r = d - bf @ g @ tt.T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:67: RuntimeWarning: overflow encountered in matmul
+  r = d - bf @ g @ tt.T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:67: RuntimeWarning: invalid value encountered in matmul
+  r = d - bf @ g @ tt.T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:68: RuntimeWarning: divide by zero encountered in matmul
+  g += np.linalg.pinv(bf) @ (r * w) @ np.linalg.pinv(tt).T / np.maximum(w.mean(), 1e-3)
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:68: RuntimeWarning: overflow encountered in matmul
+  g += np.linalg.pinv(bf) @ (r * w) @ np.linalg.pinv(tt).T / np.maximum(w.mean(), 1e-3)
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:68: RuntimeWarning: invalid value encountered in matmul
+  g += np.linalg.pinv(bf) @ (r * w) @ np.linalg.pinv(tt).T / np.maximum(w.mean(), 1e-3)
+{"ref": "15-TimeFall-Shelter", "dirtyVsClean": 99.72, "cleanedVsClean": 99.81, "reproVsClean": 97.46, "floorDb": [47.55, 26.92, 30.19], "excessPct": [0.04, 0.03, 0.24], "linesW": [91.76, 92.17, 68.48], "seconds": 219}
+/Users/zenray/Library/Python/3.9/lib/python/site-packages/numpy/linalg/_linalg.py:3220: RuntimeWarning: divide by zero encountered in matmul
+  return _core_matmul(x1, x2)
+/Users/zenray/Library/Python/3.9/lib/python/site-packages/numpy/linalg/_linalg.py:3220: RuntimeWarning: overflow encountered in matmul
+  return _core_matmul(x1, x2)
+/Users/zenray/Library/Python/3.9/lib/python/site-packages/numpy/linalg/_linalg.py:3220: RuntimeWarning: invalid value encountered in matmul
+  return _core_matmul(x1, x2)
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:65: RuntimeWarning: divide by zero encountered in matmul
+  g = np.linalg.pinv(bf) @ d @ np.linalg.pinv(tt).T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:65: RuntimeWarning: overflow encountered in matmul
+  g = np.linalg.pinv(bf) @ d @ np.linalg.pinv(tt).T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:65: RuntimeWarning: invalid value encountered in matmul
+  g = np.linalg.pinv(bf) @ d @ np.linalg.pinv(tt).T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:67: RuntimeWarning: divide by zero encountered in matmul
+  r = d - bf @ g @ tt.T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:67: RuntimeWarning: overflow encountered in matmul
+  r = d - bf @ g @ tt.T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:67: RuntimeWarning: invalid value encountered in matmul
+  r = d - bf @ g @ tt.T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:68: RuntimeWarning: divide by zero encountered in matmul
+  g += np.linalg.pinv(bf) @ (r * w) @ np.linalg.pinv(tt).T / np.maximum(w.mean(), 1e-3)
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:68: RuntimeWarning: overflow encountered in matmul
+  g += np.linalg.pinv(bf) @ (r * w) @ np.linalg.pinv(tt).T / np.maximum(w.mean(), 1e-3)
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:68: RuntimeWarning: invalid value encountered in matmul
+  g += np.linalg.pinv(bf) @ (r * w) @ np.linalg.pinv(tt).T / np.maximum(w.mean(), 1e-3)
+{"ref": "21-Awaiting-Signal", "dirtyVsClean": 99.68, "cleanedVsClean": 99.85, "reproVsClean": 99.47, "floorDb": [34.5, 25.29, 25.43], "excessPct": [2.13, 0.76, 0.95], "linesW": [79.76, 79.9, 70.0], "seconds": 99}
+/Users/zenray/Library/Python/3.9/lib/python/site-packages/numpy/linalg/_linalg.py:3220: RuntimeWarning: divide by zero encountered in matmul
+  return _core_matmul(x1, x2)
+/Users/zenray/Library/Python/3.9/lib/python/site-packages/numpy/linalg/_linalg.py:3220: RuntimeWarning: overflow encountered in matmul
+  return _core_matmul(x1, x2)
+/Users/zenray/Library/Python/3.9/lib/python/site-packages/numpy/linalg/_linalg.py:3220: RuntimeWarning: invalid value encountered in matmul
+  return _core_matmul(x1, x2)
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:65: RuntimeWarning: divide by zero encountered in matmul
+  g = np.linalg.pinv(bf) @ d @ np.linalg.pinv(tt).T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:65: RuntimeWarning: overflow encountered in matmul
+  g = np.linalg.pinv(bf) @ d @ np.linalg.pinv(tt).T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:65: RuntimeWarning: invalid value encountered in matmul
+  g = np.linalg.pinv(bf) @ d @ np.linalg.pinv(tt).T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:67: RuntimeWarning: divide by zero encountered in matmul
+  r = d - bf @ g @ tt.T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:67: RuntimeWarning: overflow encountered in matmul
+  r = d - bf @ g @ tt.T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:67: RuntimeWarning: invalid value encountered in matmul
+  r = d - bf @ g @ tt.T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:68: RuntimeWarning: divide by zero encountered in matmul
+  g += np.linalg.pinv(bf) @ (r * w) @ np.linalg.pinv(tt).T / np.maximum(w.mean(), 1e-3)
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:68: RuntimeWarning: overflow encountered in matmul
+  g += np.linalg.pinv(bf) @ (r * w) @ np.linalg.pinv(tt).T / np.maximum(w.mean(), 1e-3)
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:68: RuntimeWarning: invalid value encountered in matmul
+  g += np.linalg.pinv(bf) @ (r * w) @ np.linalg.pinv(tt).T / np.maximum(w.mean(), 1e-3)
+{"ref": "25-Inv-Close-End", "dirtyVsClean": 98.99, "cleanedVsClean": 99.24, "reproVsClean": 98.04, "floorDb": [22.78, 2.72, 4.36], "excessPct": [7.76, 3.03, 4.26], "linesW": [69.56, 70.19, 58.15], "seconds": 81}
+/Users/zenray/Library/Python/3.9/lib/python/site-packages/numpy/linalg/_linalg.py:3220: RuntimeWarning: divide by zero encountered in matmul
+  return _core_matmul(x1, x2)
+/Users/zenray/Library/Python/3.9/lib/python/site-packages/numpy/linalg/_linalg.py:3220: RuntimeWarning: overflow encountered in matmul
+  return _core_matmul(x1, x2)
+/Users/zenray/Library/Python/3.9/lib/python/site-packages/numpy/linalg/_linalg.py:3220: RuntimeWarning: invalid value encountered in matmul
+  return _core_matmul(x1, x2)
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:65: RuntimeWarning: divide by zero encountered in matmul
+  g = np.linalg.pinv(bf) @ d @ np.linalg.pinv(tt).T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:65: RuntimeWarning: overflow encountered in matmul
+  g = np.linalg.pinv(bf) @ d @ np.linalg.pinv(tt).T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:65: RuntimeWarning: invalid value encountered in matmul
+  g = np.linalg.pinv(bf) @ d @ np.linalg.pinv(tt).T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:67: RuntimeWarning: divide by zero encountered in matmul
+  r = d - bf @ g @ tt.T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:67: RuntimeWarning: overflow encountered in matmul
+  r = d - bf @ g @ tt.T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:67: RuntimeWarning: invalid value encountered in matmul
+  r = d - bf @ g @ tt.T
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:68: RuntimeWarning: divide by zero encountered in matmul
+  g += np.linalg.pinv(bf) @ (r * w) @ np.linalg.pinv(tt).T / np.maximum(w.mean(), 1e-3)
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:68: RuntimeWarning: overflow encountered in matmul
+  g += np.linalg.pinv(bf) @ (r * w) @ np.linalg.pinv(tt).T / np.maximum(w.mean(), 1e-3)
+/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:68: RuntimeWarning: invalid value encountered in matmul
+  g += np.linalg.pinv(bf) @ (r * w) @ np.linalg.pinv(tt).T / np.maximum(w.mean(), 1e-3)
+{"ref": "3-Cufflinks-Open", "dirtyVsClean": 99.75, "cleanedVsClean": 99.96, "reproVsClean": 99.17, "floorDb": [19.8, 1.76, 9.77], "excessPct": [0.52, 0.3, 0.55], "linesW": [72.31, 72.57, 56.77], "seconds": 114}
+dirtyVsClean 99.21
+cleanedVsClean 99.64
+reproVsClean 98.39

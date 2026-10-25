@@ -1,0 +1,5 @@
+21-Awaiting-Signal, 1.332 s, seed 0.
+At 0.2337 s: tone 6.047 kHz glide -0.1 st, 2 harmonics tilt -24.0 dB/oct stretch 0.0000, level -35.7 dB; attack 20.0 ms hold 10.0 ms decay 1056.5 ms.
+At 0.2387 s: tone 10.104 kHz glide 0.0 st, 1 harmonics tilt -6.0 dB/oct stretch 0.0000, level -42.8 dB; attack 20.0 ms hold 10.0 ms decay 256.3 ms.
+At 0.0300 s: noise colour -2.9 -2.9 -1.6 0.0 -2.1 -11.1 -15.8 -23.3 -35.1 -60.0 dB sweep 0.0 oct, level -45.7 dB; attack 400.0 ms hold 45.0 ms decay 2208.6 ms.
+At 0.0000 s: noise colour 0.0 0.0 -10.7 -60.0 -35.5 -27.6 -24.6 -60.0 -36.3 -60.0 dB sweep 0.0 oct, level -48.2 dB; attack 400.0 ms hold 70.0 ms decay 60.0 ms.

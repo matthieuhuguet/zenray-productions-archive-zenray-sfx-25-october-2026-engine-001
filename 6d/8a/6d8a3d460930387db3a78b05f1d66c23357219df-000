@@ -1,0 +1,9 @@
+15-TimeFall-Shelter, 1.646 s, seed 0.
+At 0.4267 s: tone 47.8 Hz glide -0.4 st, 1 harmonics tilt -6.0 dB/oct stretch 0.0000, level -5.8 dB; attack 25.0 ms hold 0.0 ms decay 60.0 ms.
+At 0.8267 s: tone 43.5 Hz glide -0.2 st, 39 harmonics tilt -6.2 dB/oct stretch 0.0000, level -7.4 dB; attack 45.0 ms hold 25.0 ms decay 4000.0 ms.
+At 0.9357 s: tone 47.0 Hz glide -0.8 st, 35 harmonics tilt -6.3 dB/oct stretch 0.0000, level -8.5 dB; attack 145.0 ms hold 30.0 ms decay 1701.5 ms.
+At 0.7947 s: tone 43.7 Hz glide -0.8 st, 1 harmonics tilt -6.0 dB/oct stretch 0.0000, level -9.0 dB; attack 25.0 ms hold 0.0 ms decay 60.0 ms.
+At 0.0550 s: noise colour -12.4 -12.4 0.0 -4.4 -6.5 -13.1 -15.6 -19.2 -26.9 -44.5 dB sweep 0.0 oct, level -33.4 dB; attack 400.0 ms hold 10.0 ms decay 2751.9 ms.
+At 0.0600 s: noise colour -13.3 -13.3 -12.1 0.0 -14.1 -22.2 -15.6 -20.8 -60.0 -60.0 dB sweep 0.0 oct, level -35.7 dB; attack 400.0 ms hold 10.0 ms decay 2957.1 ms.
+At 0.0650 s: noise colour -8.9 -8.9 -39.7 -60.0 -18.4 0.0 -60.0 -60.0 -60.0 -60.0 dB sweep 0.0 oct, level -42.5 dB; attack 400.0 ms hold 10.0 ms decay 2022.9 ms.
+At 0.0800 s: noise colour -4.4 -4.4 -54.4 -60.0 0.0 -60.0 -7.5 -60.0 -60.0 -60.0 dB sweep 0.0 oct, level -49.3 dB; attack 400.0 ms hold 0.0 ms decay 3076.5 ms.

@@ -1,0 +1,17 @@
+10-Mail-Open, 1.411 s, seed 0.
+At 0.0533 s: tone 361.4 Hz glide -1.4 st, 36 harmonics tilt -12.2 dB/oct stretch 0.0000, level -9.8 dB; attack 45.0 ms hold 5.0 ms decay 76.1 ms.
+At 0.0573 s: tone 520.3 Hz glide -0.0 st, 29 harmonics tilt -5.9 dB/oct stretch 0.0000, level -20.7 dB; attack 40.0 ms hold 0.0 ms decay 71.1 ms.
+At 0.1280 s: tone 364.4 Hz glide -0.9 st, 20 harmonics tilt -12.4 dB/oct stretch 0.0000, level -25.0 dB; attack 0.5 ms hold 0.0 ms decay 3182.3 ms.
+At 0.0800 s: tone 984.1 Hz glide 0.1 st, 1 harmonics tilt -6.0 dB/oct stretch 0.0000, level -27.9 dB; attack 0.5 ms hold 0.0 ms decay 202.6 ms.
+At 0.2827 s: tone 410.6 Hz glide 0.5 st, 18 harmonics tilt -9.6 dB/oct stretch 0.0000, level -30.2 dB; attack 0.5 ms hold 5.0 ms decay 115.6 ms.
+At 0.0600 s: noise colour -60.0 -60.0 -60.0 -7.5 0.0 -19.7 -12.5 -16.7 -15.8 -60.0 dB sweep 0.0 oct, level -31.1 dB; attack 25.0 ms hold 0.0 ms decay 3266.4 ms.
+At 0.3893 s: tone 407.9 Hz glide 0.1 st, 4 harmonics tilt -16.3 dB/oct stretch 0.0000, level -32.7 dB; attack 15.0 ms hold 0.0 ms decay 212.5 ms.
+At 0.1173 s: tone 115.2 Hz glide -0.4 st, 16 harmonics tilt -3.5 dB/oct stretch 0.0000, level -33.5 dB; attack 5.0 ms hold 0.0 ms decay 668.6 ms.
+At 0.0750 s: noise colour -60.0 -60.0 -60.0 -6.9 0.0 -12.7 -60.0 -60.0 -60.0 -60.0 dB sweep 0.0 oct, level -36.0 dB; attack 15.0 ms hold 5.0 ms decay 4000.0 ms.
+At 0.0523 s: tone 6.821 kHz glide -0.0 st, 1 harmonics tilt -6.0 dB/oct stretch 0.0000, level -36.1 dB; attack 25.0 ms hold 0.0 ms decay 60.0 ms.
+At 0.0850 s: noise colour -60.0 -60.0 -11.1 0.0 -8.2 -17.2 -60.0 -60.0 -60.0 -60.0 dB sweep 0.0 oct, level -36.7 dB; attack 0.5 ms hold 5.0 ms decay 4000.0 ms.
+At 0.0750 s: noise colour -60.0 -60.0 -60.0 -13.1 0.0 -10.4 -60.0 -60.0 -60.0 -60.0 dB sweep 0.0 oct, level -37.4 dB; attack 15.0 ms hold 20.0 ms decay 4000.0 ms.
+At 0.0750 s: noise colour -60.0 -60.0 -60.0 0.0 -3.2 -11.9 -60.0 -60.0 -60.0 -60.0 dB sweep 0.0 oct, level -38.9 dB; attack 10.0 ms hold 0.0 ms decay 4000.0 ms.
+At 0.0550 s: noise colour -60.0 -60.0 -60.0 0.0 -3.5 -11.8 -60.0 -60.0 -15.3 -60.0 dB sweep 0.0 oct, level -40.1 dB; attack 30.0 ms hold 0.0 ms decay 4000.0 ms.
+At 0.0400 s: noise colour -7.1 -7.1 0.0 -7.2 -10.7 -14.7 -18.8 -60.0 -60.0 -60.0 dB sweep 0.0 oct, level -40.7 dB; attack 90.0 ms hold 0.0 ms decay 4000.0 ms.
+At 0.0000 s: noise colour 0.0 0.0 -25.8 -6.2 -9.8 -60.0 -11.8 -21.2 -31.2 -56.3 dB sweep 0.0 oct, level -45.2 dB; attack 255.0 ms hold 20.0 ms decay 4000.0 ms.

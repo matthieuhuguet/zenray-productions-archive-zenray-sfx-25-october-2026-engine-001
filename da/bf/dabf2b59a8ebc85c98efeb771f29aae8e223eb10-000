@@ -1,0 +1,36 @@
+[
+ {
+  "ref": "12-Denied",
+  "events": 16,
+  "numbers": 421,
+  "words": 459,
+  "heldInvariant": 80.16,
+  "linesW": 3.1,
+  "excessPct": 12.43,
+  "ladder": {
+   "1": 60.84,
+   "2": 72.71,
+   "4": 76.05,
+   "8": 78.44,
+   "16": 79.51
+  },
+  "seconds": 90
+ },
+ {
+  "ref": "15-TimeFall-Shelter",
+  "events": 16,
+  "numbers": 324,
+  "words": 406,
+  "heldInvariant": 84.41,
+  "linesW": 23.5,
+  "excessPct": 4.76,
+  "ladder": {
+   "1": 77.49,
+   "2": 78.76,
+   "4": 81.4,
+   "8": 82.98,
+   "16": 83.97
+  },
+  "seconds": 99
+ }
+]

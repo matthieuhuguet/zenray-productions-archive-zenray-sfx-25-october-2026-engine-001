@@ -1,0 +1,9 @@
+25-Inv-Close-End, 0.862 s, seed 0.
+At 0.2180 s: tone 6.865 kHz glide -0.0 st, 1 harmonics tilt -6.0 dB/oct stretch 0.0000, level -29.2 dB; attack 25.0 ms hold 0.0 ms decay 47.3 ms.
+At 0.4053 s: tone 5.445 kHz glide -0.4 st, 1 harmonics tilt -6.0 dB/oct stretch 0.0000, level -32.1 dB; attack 45.0 ms hold 0.0 ms decay 60.0 ms.
+At 0.2507 s: tone 1.511 kHz glide 0.1 st, 10 harmonics tilt -5.8 dB/oct stretch 0.0000, level -32.2 dB; attack 20.0 ms hold 5.0 ms decay 71.9 ms.
+At 0.4213 s: tone 12.000 kHz glide -0.0 st, 1 harmonics tilt -6.0 dB/oct stretch 0.0000, level -35.2 dB; attack 10.0 ms hold 5.0 ms decay 55.6 ms.
+At 0.0000 s: noise colour 0.0 0.0 -15.7 -32.0 -19.4 -12.7 -5.1 -3.1 -2.4 -60.0 dB sweep 0.0 oct, level -47.7 dB; attack 400.0 ms hold 10.0 ms decay 2467.8 ms.
+At 0.0000 s: noise colour 0.0 0.0 -16.4 -26.3 -26.3 -29.4 -60.0 -60.0 -60.0 -60.0 dB sweep 0.0 oct, level -47.8 dB; attack 290.0 ms hold 90.0 ms decay 4000.0 ms.
+At 0.2300 s: noise colour 0.0 0.0 -60.0 -43.1 -20.3 -4.6 -9.3 -7.6 -60.0 -60.0 dB sweep 0.0 oct, level -48.7 dB; attack 30.0 ms hold 5.0 ms decay 4000.0 ms.
+At 0.0000 s: noise colour 0.0 0.0 -60.0 -25.1 -26.0 -60.0 -60.0 -60.0 -60.0 -60.0 dB sweep 0.0 oct, level -49.1 dB; attack 400.0 ms hold 60.0 ms decay 253.3 ms.

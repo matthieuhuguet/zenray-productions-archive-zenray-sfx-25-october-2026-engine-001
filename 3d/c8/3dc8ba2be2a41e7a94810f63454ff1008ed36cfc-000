@@ -1,0 +1,48 @@
+10-Mail-Open           identity diff 2.9e-16 | -6 dB on Glissando 361 Hz, 0,10 s {'localDb': 4.52, 'peakDb': 5.86, 'word': 'franc', 'globalJnd': 2.48}
+     {'index': 0, 'name': 'Attaque', 'peakS': 0.0853, 'attackMs': 24.0, 'decayMs': 18.7, 'centroidHz': 1585.7, 'tonal': 0.0, 'share': 0.1731, 'partials': 0}
+     {'index': 1, 'name': 'Corps grave', 'peakS': 0.1067, 'attackMs': 66.7, 'decayMs': 1181.3, 'centroidHz': 182.9, 'tonal': 0.0, 'share': 0.0309, 'partials': 0}
+     {'index': 2, 'name': 'Queue de souffle', 'peakS': 0.1013, 'attackMs': 50.7, 'decayMs': 1178.7, 'centroidHz': 862.9, 'tonal': 0.0, 'share': 0.0443, 'partials': 0}
+     {'index': 3, 'name': 'Glissando 361 Hz, 0,10 s', 'peakS': 0.096, 'attackMs': 26.7, 'decayMs': 53.3, 'centroidHz': 405.7, 'tonal': 1.0, 'share': 0.7335, 'partials': 9}
+     {'index': 4, 'name': 'Ton 984 Hz, 0,09 s', 'peakS': 0.0853, 'attackMs': 10.7, 'decayMs': 170.7, 'centroidHz': 802.2, 'tonal': 1.0, 'share': 0.0085, 'partials': 15}
+     {'index': 5, 'name': 'Ton 402 Hz, 0,25 s', 'peakS': 0.2507, 'attackMs': 69.3, 'decayMs': 58.7, 'centroidHz': 541.1, 'tonal': 1.0, 'share': 0.0028, 'partials': 16}
+     {'index': 6, 'name': 'Ton 411 Hz, 0,29 s', 'peakS': 0.288, 'attackMs': 18.7, 'decayMs': 997.3, 'centroidHz': 519.5, 'tonal': 1.0, 'share': 0.0068, 'partials': 175}
+12-Denied              identity diff 5.7e-16 | -6 dB on Ton 166 Hz, 0,25 s {'localDb': 1.66, 'peakDb': 5.95, 'word': 'subtil', 'globalJnd': 0.45}
+     {'index': 0, 'name': 'Corps grave', 'peakS': 0.1333, 'attackMs': 69.3, 'decayMs': 400.0, 'centroidHz': 122.9, 'tonal': 0.0, 'share': 0.2681, 'partials': 0}
+     {'index': 1, 'name': 'Queue de souffle', 'peakS': 0.096, 'attackMs': 18.7, 'decayMs': 544.0, 'centroidHz': 1233.5, 'tonal': 0.0, 'share': 0.118, 'partials': 0}
+     {'index': 2, 'name': 'Ton 167 Hz, 0,15 s', 'peakS': 0.152, 'attackMs': 117.3, 'decayMs': 26.7, 'centroidHz': 397.4, 'tonal': 1.0, 'share': 0.1887, 'partials': 38}
+     {'index': 3, 'name': 'Ton 221 Hz, 0,11 s', 'peakS': 0.1067, 'attackMs': 16.0, 'decayMs': 61.3, 'centroidHz': 399.6, 'tonal': 1.0, 'share': 0.1123, 'partials': 31}
+     {'index': 4, 'name': 'Ton 166 Hz, 0,25 s', 'peakS': 0.248, 'attackMs': 18.7, 'decayMs': 72.0, 'centroidHz': 383.8, 'tonal': 1.0, 'share': 0.29, 'partials': 53}
+     {'index': 5, 'name': 'Ton 441 Hz, 0,29 s', 'peakS': 0.2907, 'attackMs': 45.3, 'decayMs': 370.7, 'centroidHz': 654.7, 'tonal': 1.0, 'share': 0.0225, 'partials': 124}
+15-TimeFall-Shelter    identity diff 5.3e-16 | -6 dB on Ton 43 Hz, 0,87 s {'localDb': 1.05, 'peakDb': 6.27, 'word': 'subtil', 'globalJnd': 1.23}
+     {'index': 0, 'name': 'Attaque', 'peakS': 1.248, 'attackMs': 1061.3, 'decayMs': 18.7, 'centroidHz': 267.5, 'tonal': 0.0, 'share': 0.0076, 'partials': 0}
+     {'index': 1, 'name': 'Corps grave', 'peakS': 0.5493, 'attackMs': 480.0, 'decayMs': 602.7, 'centroidHz': 74.1, 'tonal': 0.0, 'share': 0.2008, 'partials': 0}
+     {'index': 2, 'name': 'Queue de souffle', 'peakS': 0.3627, 'attackMs': 304.0, 'decayMs': 789.3, 'centroidHz': 1769.7, 'tonal': 0.0, 'share': 0.0122, 'partials': 0}
+     {'index': 3, 'name': 'Ton 45 Hz, 0,54 s', 'peakS': 0.5413, 'attackMs': 410.7, 'decayMs': 10.7, 'centroidHz': 80.7, 'tonal': 1.0, 'share': 0.2302, 'partials': 96}
+     {'index': 4, 'name': 'Ton 41 Hz, 0,67 s', 'peakS': 0.6667, 'attackMs': 104.0, 'decayMs': 144.0, 'centroidHz': 80.5, 'tonal': 1.0, 'share': 0.2146, 'partials': 51}
+     {'index': 5, 'name': 'Ton 44 Hz, 0,81 s', 'peakS': 0.8107, 'attackMs': 48.0, 'decayMs': 154.7, 'centroidHz': 91.7, 'tonal': 1.0, 'share': 0.0602, 'partials': 33}
+     {'index': 6, 'name': 'Ton 43 Hz, 0,87 s', 'peakS': 0.8747, 'attackMs': 8.0, 'decayMs': 317.3, 'centroidHz': 75.8, 'tonal': 1.0, 'share': 0.2743, 'partials': 76}
+21-Awaiting-Signal     identity diff 7.8e-16 | -6 dB on Queue de souffle {'localDb': 1.42, 'peakDb': 6.01, 'word': 'subtil', 'globalJnd': 1.59}
+     {'index': 0, 'name': 'Attaque', 'peakS': 0.0613, 'attackMs': 26.7, 'decayMs': 18.7, 'centroidHz': 539.2, 'tonal': 0.0, 'share': 0.0136, 'partials': 0}
+     {'index': 1, 'name': 'Corps grave', 'peakS': 0.4133, 'attackMs': 346.7, 'decayMs': 813.3, 'centroidHz': 171.2, 'tonal': 0.0, 'share': 0.2237, 'partials': 0}
+     {'index': 2, 'name': 'Queue de souffle', 'peakS': 0.4853, 'attackMs': 416.0, 'decayMs': 712.0, 'centroidHz': 1152.9, 'tonal': 0.0, 'share': 0.4096, 'partials': 0}
+     {'index': 3, 'name': 'Ton 6,0 kHz, 0,26 s', 'peakS': 0.2587, 'attackMs': 216.0, 'decayMs': 274.7, 'centroidHz': 6758.5, 'tonal': 1.0, 'share': 0.1541, 'partials': 64}
+     {'index': 4, 'name': 'Ton 83 Hz, 0,23 s', 'peakS': 0.2347, 'attackMs': 10.7, 'decayMs': 157.3, 'centroidHz': 1214.9, 'tonal': 1.0, 'share': 0.0382, 'partials': 23}
+     {'index': 5, 'name': 'Ton 6,4 kHz, 0,36 s', 'peakS': 0.3573, 'attackMs': 85.3, 'decayMs': 130.7, 'centroidHz': 6059.9, 'tonal': 1.0, 'share': 0.0512, 'partials': 10}
+     {'index': 6, 'name': 'Ton 391 Hz, 0,37 s', 'peakS': 0.3707, 'attackMs': 45.3, 'decayMs': 757.3, 'centroidHz': 1201.7, 'tonal': 1.0, 'share': 0.1097, 'partials': 159}
+25-Inv-Close-End       identity diff 3.0e-16 | -6 dB on Attaque {'localDb': 2.65, 'peakDb': 5.81, 'word': 'subtil', 'globalJnd': 0.84}
+     {'index': 0, 'name': 'Attaque', 'peakS': 0.232, 'attackMs': 112.0, 'decayMs': 42.7, 'centroidHz': 6648.9, 'tonal': 0.0, 'share': 0.6183, 'partials': 0}
+     {'index': 1, 'name': 'Corps grave', 'peakS': 0.288, 'attackMs': 250.7, 'decayMs': 136.0, 'centroidHz': 114.5, 'tonal': 0.0, 'share': 0.0052, 'partials': 0}
+     {'index': 2, 'name': 'Souffle', 'peakS': 0.2293, 'attackMs': 120.0, 'decayMs': 2.7, 'centroidHz': 4725.2, 'tonal': 0.0, 'share': 0.1892, 'partials': 0}
+     {'index': 3, 'name': 'Ton 389 Hz, 0,13 s', 'peakS': 0.1253, 'attackMs': 125.3, 'decayMs': 645.3, 'centroidHz': 1053.2, 'tonal': 1.0, 'share': 0.0104, 'partials': 31}
+     {'index': 4, 'name': 'Ton 7,1 kHz, 0,24 s', 'peakS': 0.2427, 'attackMs': 69.3, 'decayMs': 197.3, 'centroidHz': 7040.3, 'tonal': 1.0, 'share': 0.0462, 'partials': 13}
+     {'index': 5, 'name': 'Ton 1,5 kHz, 0,27 s', 'peakS': 0.272, 'attackMs': 24.0, 'decayMs': 152.0, 'centroidHz': 1952.6, 'tonal': 1.0, 'share': 0.0544, 'partials': 22}
+     {'index': 6, 'name': 'Ton 12,3 kHz, 0,43 s', 'peakS': 0.4347, 'attackMs': 21.3, 'decayMs': 34.7, 'centroidHz': 8912.3, 'tonal': 1.0, 'share': 0.0763, 'partials': 123}
+3-Cufflinks-Open       identity diff 3.3e-16 | -6 dB on Queue de souffle {'localDb': 2.6, 'peakDb': 6.03, 'word': 'subtil', 'globalJnd': 2.08}
+     {'index': 0, 'name': 'Attaque', 'peakS': 0.0453, 'attackMs': 2.7, 'decayMs': 45.3, 'centroidHz': 1421.8, 'tonal': 0.0, 'share': 0.0265, 'partials': 0}
+     {'index': 1, 'name': 'Corps grave', 'peakS': 0.0427, 'attackMs': 10.7, 'decayMs': 2.7, 'centroidHz': 102.6, 'tonal': 0.0, 'share': 0.0181, 'partials': 0}
+     {'index': 2, 'name': 'Queue de souffle', 'peakS': 0.1867, 'attackMs': 149.3, 'decayMs': 1200.0, 'centroidHz': 3204.5, 'tonal': 0.0, 'share': 0.3997, 'partials': 0}
+     {'index': 3, 'name': 'Ton 8,9 kHz, 0,07 s', 'peakS': 0.0667, 'attackMs': 16.0, 'decayMs': 80.0, 'centroidHz': 10274.1, 'tonal': 1.0, 'share': 0.2645, 'partials': 23}
+     {'index': 4, 'name': 'Ton 3,7 kHz, 0,16 s', 'peakS': 0.16, 'attackMs': 29.3, 'decayMs': 80.0, 'centroidHz': 3546.4, 'tonal': 1.0, 'share': 0.0562, 'partials': 9}
+     {'index': 5, 'name': 'Ton 8,9 kHz, 0,24 s', 'peakS': 0.2373, 'attackMs': 56.0, 'decayMs': 64.0, 'centroidHz': 9512.6, 'tonal': 1.0, 'share': 0.1219, 'partials': 32}
+     {'index': 6, 'name': 'Ton 1,1 kHz, 0,40 s', 'peakS': 0.4027, 'attackMs': 66.7, 'decayMs': 722.7, 'centroidHz': 3542.6, 'tonal': 1.0, 'share': 0.1131, 'partials': 192}
+semantic exit=0

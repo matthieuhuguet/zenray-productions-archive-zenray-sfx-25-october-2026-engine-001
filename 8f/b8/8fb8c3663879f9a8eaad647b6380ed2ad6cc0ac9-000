@@ -1,0 +1,9 @@
+3-Cufflinks-Open, 1.933 s, seed 0.
+At 0.0523 s: tone 33.1 Hz glide -0.6 st, 40 harmonics tilt -2.4 dB/oct stretch 0.0000, level -7.9 dB; attack 30.0 ms hold 10.0 ms decay 249.8 ms.
+At 0.0527 s: tone 8.938 kHz glide 0.0 st, 2 harmonics tilt -24.0 dB/oct stretch 0.0000, level -17.3 dB; attack 15.0 ms hold 5.0 ms decay 77.8 ms.
+At 0.0573 s: tone 12.000 kHz glide 0.0 st, 1 harmonics tilt -6.0 dB/oct stretch 0.0000, level -18.6 dB; attack 10.0 ms hold 5.0 ms decay 83.0 ms.
+At 0.1813 s: tone 8.934 kHz glide 0.0 st, 1 harmonics tilt -6.0 dB/oct stretch 0.0000, level -21.9 dB; attack 60.0 ms hold 0.0 ms decay 74.4 ms.
+At 0.0000 s: noise colour -11.7 -11.7 -10.2 -13.0 -7.0 0.0 -11.1 -10.7 -35.4 -60.0 dB sweep 0.0 oct, level -35.7 dB; attack 140.0 ms hold 30.0 ms decay 4000.0 ms.
+At 0.0350 s: noise colour -10.1 -10.1 -60.0 0.0 -2.8 -60.0 -60.0 -60.0 -26.2 -60.0 dB sweep 0.0 oct, level -36.5 dB; attack 10.0 ms hold 5.0 ms decay 3360.0 ms.
+At 0.0000 s: noise colour -7.2 -7.2 -10.5 -23.0 -14.0 -11.9 0.0 -6.0 -17.2 -60.0 dB sweep 0.0 oct, level -37.1 dB; attack 345.0 ms hold 15.0 ms decay 4000.0 ms.
+At 0.0500 s: noise colour -3.0 -3.0 -6.9 -2.7 -60.0 -2.6 0.0 -60.0 -16.3 -35.7 dB sweep 0.0 oct, level -43.3 dB; attack 40.0 ms hold 10.0 ms decay 4000.0 ms.

@@ -1,0 +1,9 @@
+10-Mail-Open, 1.411 s, seed 0.
+At 0.0533 s: tone 361.4 Hz glide -1.4 st, 40 harmonics tilt -9.5 dB/oct stretch 0.0000, level 0.0 dB; attack 45.0 ms hold 5.0 ms decay 76.1 ms.
+At 0.0573 s: tone 520.3 Hz glide -0.0 st, 11 harmonics tilt -5.5 dB/oct stretch 0.0000, level -22.1 dB; attack 40.0 ms hold 0.0 ms decay 78.6 ms.
+At 0.1280 s: tone 364.4 Hz glide -0.9 st, 20 harmonics tilt -12.3 dB/oct stretch 0.0000, level -25.2 dB; attack 0.5 ms hold 0.0 ms decay 3163.6 ms.
+At 0.0847 s: tone 984.1 Hz glide 0.1 st, 16 harmonics tilt -10.4 dB/oct stretch 0.0000, level -27.9 dB; attack 0.5 ms hold 0.0 ms decay 439.3 ms.
+At 0.0650 s: noise colour -60.0 -60.0 -60.0 -21.6 0.0 -22.6 -15.7 -18.2 -15.4 -60.0 dB sweep 0.0 oct, level -30.8 dB; attack 20.0 ms hold 0.0 ms decay 4000.0 ms.
+At 0.0600 s: noise colour -60.0 -60.0 -60.0 -21.5 0.0 -13.3 -15.4 -22.7 -39.1 -60.0 dB sweep 0.0 oct, level -32.4 dB; attack 30.0 ms hold 10.0 ms decay 4000.0 ms.
+At 0.0000 s: noise colour -6.9 -6.9 -14.9 -15.4 0.0 -8.2 -60.0 -60.0 -60.0 -60.0 dB sweep 0.0 oct, level -38.0 dB; attack 85.0 ms hold 5.0 ms decay 4000.0 ms.
+At 0.0000 s: noise colour -6.2 -6.2 0.0 -4.1 -10.0 -12.4 -60.0 -60.0 -60.0 -60.0 dB sweep 0.0 oct, level -40.2 dB; attack 130.0 ms hold 0.0 ms decay 4000.0 ms.

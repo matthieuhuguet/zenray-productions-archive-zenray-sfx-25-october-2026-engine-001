@@ -1,0 +1,46 @@
+[
+ {
+  "ref": "12-Denied",
+  "size": "4x4",
+  "events": 8,
+  "numbers": 237,
+  "words": 245,
+  "heldInvariant": 88.94,
+  "linesW": 4.7,
+  "excessPct": 4.98,
+  "seconds": 44
+ },
+ {
+  "ref": "12-Denied",
+  "size": "8x8",
+  "events": 16,
+  "numbers": 419,
+  "words": 458,
+  "heldInvariant": 82.25,
+  "linesW": 6.6,
+  "excessPct": 12.54,
+  "seconds": 102
+ },
+ {
+  "ref": "15-TimeFall-Shelter",
+  "size": "4x4",
+  "events": 8,
+  "numbers": 171,
+  "words": 212,
+  "heldInvariant": 81.81,
+  "linesW": 30.8,
+  "excessPct": 2.89,
+  "seconds": 73
+ },
+ {
+  "ref": "15-TimeFall-Shelter",
+  "size": "8x8",
+  "events": 15,
+  "numbers": 306,
+  "words": 384,
+  "heldInvariant": 85.18,
+  "linesW": 27.7,
+  "excessPct": 5.08,
+  "seconds": 206
+ }
+]

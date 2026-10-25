@@ -1,0 +1,4 @@
+12-Denied, 0.810 s, seed 0.
+At 0.0109 s: tone 88.0 Hz glide 10.4 st, 18 harmonics tilt -7.8 dB/oct stretch 0.0175, level -18.3 dB; noise 148.8 Hz width 4.8 oct sweep -1.4 oct, level -26.4 dB; attack 92.6 ms hold 2.0 ms decay 3973.4 ms.
+At 0.0820 s: tone 677.3 Hz glide -13.0 st, 2 harmonics tilt -3.7 dB/oct stretch 0.0258, level -55.0 dB; noise 1.460 kHz width 4.2 oct sweep -2.5 oct, level -58.8 dB; attack 1.7 ms hold 580.2 ms decay 350.2 ms.
+At 0.2305 s: tone 194.8 Hz glide 12.4 st, 14 harmonics tilt -10.4 dB/oct stretch 0.0071, level -25.5 dB; noise 1.154 kHz width 4.0 oct sweep -1.1 oct, level -48.4 dB; attack 7.1 ms hold 74.3 ms decay 82.0 ms.

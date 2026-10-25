@@ -1,0 +1,194 @@
+[
+ {
+  "ref": "10-Mail-Open",
+  "method": "P256G32aM",
+  "params": 3260,
+  "exact": 86.04,
+  "invariant": 98.27,
+  "invErrors": {
+   "stft": 0.873,
+   "mel": 0.4971,
+   "envelope": 0.7437,
+   "onset": 0.4161
+  },
+  "lines": 77.28,
+  "floorDb": 3.02,
+  "seconds": 1.32
+ },
+ {
+  "ref": "10-Mail-Open",
+  "method": "P256G32aEM",
+  "params": 3838,
+  "exact": 84.72,
+  "invariant": 98.31,
+  "invErrors": {
+   "stft": 0.8905,
+   "mel": 0.6159,
+   "envelope": 0.4738,
+   "onset": 0.5448
+  },
+  "lines": 77.42,
+  "floorDb": 2.06,
+  "seconds": 0.66
+ },
+ {
+  "ref": "12-Denied",
+  "method": "P256G32aM",
+  "params": 3462,
+  "exact": 82.66,
+  "invariant": 98.39,
+  "invErrors": {
+   "stft": 0.8245,
+   "mel": 0.4954,
+   "envelope": 0.8297,
+   "onset": 0.0633
+  },
+  "lines": 55.19,
+  "floorDb": 4.5,
+  "seconds": 0.46
+ },
+ {
+  "ref": "12-Denied",
+  "method": "P256G32aEM",
+  "params": 3790,
+  "exact": 85.15,
+  "invariant": 98.82,
+  "invErrors": {
+   "stft": 0.7503,
+   "mel": 0.4311,
+   "envelope": 0.6598,
+   "onset": -0.0131
+  },
+  "lines": 53.18,
+  "floorDb": 3.3,
+  "seconds": 0.49
+ },
+ {
+  "ref": "15-TimeFall-Shelter",
+  "method": "P256G32aM",
+  "params": 4345,
+  "exact": 78.48,
+  "invariant": 96.64,
+  "invErrors": {
+   "stft": 1.1177,
+   "mel": 0.5975,
+   "envelope": 1.3349,
+   "onset": 0.1153
+  },
+  "lines": 61.06,
+  "floorDb": 3.53,
+  "seconds": 0.82
+ },
+ {
+  "ref": "15-TimeFall-Shelter",
+  "method": "P256G32aEM",
+  "params": 5065,
+  "exact": 80.48,
+  "invariant": 96.79,
+  "invErrors": {
+   "stft": 1.2735,
+   "mel": 0.7981,
+   "envelope": 0.9868,
+   "onset": -0.1274
+  },
+  "lines": 52.62,
+  "floorDb": 2.56,
+  "seconds": 0.85
+ },
+ {
+  "ref": "21-Awaiting-Signal",
+  "method": "P256G32aM",
+  "params": 4243,
+  "exact": 85.7,
+  "invariant": 99.15,
+  "invErrors": {
+   "stft": 0.6418,
+   "mel": 0.3616,
+   "envelope": 0.548,
+   "onset": -0.0514
+  },
+  "lines": 69.51,
+  "floorDb": 7.22,
+  "seconds": 0.68
+ },
+ {
+  "ref": "21-Awaiting-Signal",
+  "method": "P256G32aEM",
+  "params": 4583,
+  "exact": 85.89,
+  "invariant": 99.24,
+  "invErrors": {
+   "stft": 0.693,
+   "mel": 0.4171,
+   "envelope": 0.317,
+   "onset": -0.0516
+  },
+  "lines": 66.18,
+  "floorDb": 4.62,
+  "seconds": 0.71
+ },
+ {
+  "ref": "25-Inv-Close-End",
+  "method": "P256G32aM",
+  "params": 3331,
+  "exact": 82.92,
+  "invariant": 98.35,
+  "invErrors": {
+   "stft": 0.7217,
+   "mel": 0.5031,
+   "envelope": 0.9188,
+   "onset": -0.1894
+  },
+  "lines": 75.06,
+  "floorDb": 6.67,
+  "seconds": 0.44
+ },
+ {
+  "ref": "25-Inv-Close-End",
+  "method": "P256G32aEM",
+  "params": 3757,
+  "exact": 84.88,
+  "invariant": 99.18,
+  "invErrors": {
+   "stft": 0.6728,
+   "mel": 0.4801,
+   "envelope": 0.3084,
+   "onset": -0.2052
+  },
+  "lines": 71.28,
+  "floorDb": 6.95,
+  "seconds": 0.47
+ },
+ {
+  "ref": "3-Cufflinks-Open",
+  "method": "P256G32aM",
+  "params": 4254,
+  "exact": 80.37,
+  "invariant": 96.89,
+  "invErrors": {
+   "stft": 0.8566,
+   "mel": 0.647,
+   "envelope": 1.4119,
+   "onset": -0.0425
+  },
+  "lines": 72.54,
+  "floorDb": 2.19,
+  "seconds": 0.89
+ },
+ {
+  "ref": "3-Cufflinks-Open",
+  "method": "P256G32aEM",
+  "params": 4804,
+  "exact": 82.35,
+  "invariant": 98.44,
+  "invErrors": {
+   "stft": 0.9667,
+   "mel": 0.7644,
+   "envelope": 0.2108,
+   "onset": -0.0645
+  },
+  "lines": 66.38,
+  "floorDb": 1.88,
+  "seconds": 0.94
+ }
+]

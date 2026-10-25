@@ -1,0 +1,9 @@
+12-Denied, 0.810 s, seed 0.
+At 0.2393 s: tone 55.3 Hz glide 0.1 st, 39 harmonics tilt -5.3 dB/oct stretch 0.0000, level -17.8 dB; attack 50.0 ms hold 15.0 ms decay 130.3 ms.
+At 0.0853 s: tone 166.7 Hz glide 0.0 st, 18 harmonics tilt -5.4 dB/oct stretch 0.0000, level -18.7 dB; attack 0.5 ms hold 75.0 ms decay 100.3 ms.
+At 0.0853 s: tone 220.9 Hz glide -0.1 st, 37 harmonics tilt -5.6 dB/oct stretch 0.0000, level -21.8 dB; attack 15.0 ms hold 40.0 ms decay 46.1 ms.
+At 0.0300 s: noise colour -17.9 -17.9 -60.0 0.0 -10.8 -12.9 -17.7 -29.6 -31.4 -60.0 dB sweep 0.0 oct, level -28.9 dB; attack 65.0 ms hold 5.0 ms decay 1460.9 ms.
+At 0.0253 s: tone 70.7 Hz glide -1.2 st, 1 harmonics tilt -6.0 dB/oct stretch 0.0000, level -32.6 dB; attack 35.0 ms hold 0.0 ms decay 60.0 ms.
+At 0.0500 s: noise colour -6.4 -6.4 -3.4 0.0 -4.9 -8.6 -8.2 -22.5 -26.9 -60.0 dB sweep 0.0 oct, level -39.8 dB; attack 230.0 ms hold 10.0 ms decay 1771.3 ms.
+At 0.0800 s: noise colour -60.0 -60.0 0.0 -60.0 -60.0 -60.0 -59.7 -20.4 -60.0 -60.0 dB sweep 0.0 oct, level -40.9 dB; attack 55.0 ms hold 10.0 ms decay 4000.0 ms.
+At 0.0550 s: noise colour -7.2 -7.2 -60.0 0.0 -60.0 -60.0 -60.0 -32.0 -60.0 -60.0 dB sweep 0.0 oct, level -41.0 dB; attack 80.0 ms hold 20.0 ms decay 1218.7 ms.

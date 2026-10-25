@@ -1,0 +1,19 @@
+[
+ {
+  "ref": "12-Denied",
+  "events": 16,
+  "numbers": 131,
+  "words": 393,
+  "heldInvariant": 87.74,
+  "linesW": 12.0,
+  "excessPct": 5.9,
+  "ladder": {
+   "1": 49.22,
+   "2": 54.24,
+   "4": 75.45,
+   "8": 76.83,
+   "16": 74.51
+  },
+  "seconds": 276
+ }
+]

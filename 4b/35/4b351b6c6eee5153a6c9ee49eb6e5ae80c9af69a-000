@@ -1,0 +1,17 @@
+15-TimeFall-Shelter, 1.646 s, seed 0.
+At 0.0206 s: tone 30.2 Hz glide 15.3 st, 24 harmonics tilt -11.6 dB/oct stretch 0.0242, level -16.0 dB; attack 77.6 ms hold 1219.8 ms decay 1114.2 ms.
+At 0.3435 s: noise 8.818 kHz width 8.9 oct sweep -2.9 oct tilt -10.5 dB/oct, level -70.2 dB; attack 12.2 ms hold 1207.5 ms decay 543.4 ms.
+At 0.8486 s: tone 567.6 Hz glide -16.0 st, 15 harmonics tilt -5.4 dB/oct stretch 0.0004, level -47.0 dB; attack 3.1 ms hold 284.1 ms decay 1323.9 ms.
+At 0.1058 s: noise 1.445 kHz width 6.3 oct sweep -3.0 oct tilt -4.6 dB/oct, level -49.2 dB; attack 17.6 ms hold 1105.7 ms decay 165.6 ms.
+At 0.5185 s: noise 3.140 kHz width 4.0 oct sweep 0.0 oct tilt -6.6 dB/oct, level -52.3 dB; attack 11.5 ms hold 236.4 ms decay 2107.3 ms.
+At 0.9227 s: tone 10.031 kHz glide 0.0 st, 1 harmonics tilt -6.0 dB/oct stretch 0.0001, level -49.1 dB; attack 96.0 ms hold 93.3 ms decay 186.7 ms.
+At 0.9107 s: noise 7.423 kHz width 1.9 oct sweep -0.5 oct tilt 3.7 dB/oct, level -67.0 dB; attack 11.9 ms hold 391.7 ms decay 137.4 ms.
+At 0.5038 s: noise 4.366 kHz width 2.0 oct sweep 0.8 oct tilt -4.6 dB/oct, level -63.8 dB; attack 76.3 ms hold 407.9 ms decay 19.5 ms.
+At 0.9053 s: tone 42.5 Hz glide -8.7 st, 29 harmonics tilt -19.9 dB/oct stretch 0.0111, level -27.8 dB; attack 2.2 ms hold 587.5 ms decay 77.4 ms.
+At 0.9238 s: tone 62.8 Hz glide 10.8 st, 7 harmonics tilt -3.7 dB/oct stretch 0.0001, level -28.2 dB; attack 3.9 ms hold 157.1 ms decay 17.0 ms.
+At 0.2907 s: noise 6.362 kHz width 2.0 oct sweep -1.2 oct tilt -0.3 dB/oct, level -55.7 dB; attack 26.5 ms hold 277.0 ms decay 505.7 ms.
+At 0.5427 s: noise 7.853 kHz width 1.5 oct sweep -2.1 oct tilt 1.4 dB/oct, level -59.9 dB; attack 156.5 ms hold 471.0 ms decay 193.8 ms.
+At 0.5380 s: noise 9.581 kHz width 0.5 oct sweep -0.5 oct tilt -4.9 dB/oct, level -52.0 dB; attack 96.9 ms hold 2.0 ms decay 295.9 ms.
+At 0.5698 s: noise 1.109 kHz width 1.0 oct sweep -0.0 oct tilt -4.4 dB/oct, level -48.7 dB; attack 22.7 ms hold 439.3 ms decay 790.8 ms.
+At 0.5675 s: noise 15.569 kHz width 0.2 oct sweep -0.7 oct tilt 6.1 dB/oct, level -54.2 dB; attack 201.0 ms hold 146.7 ms decay 466.3 ms.
+At 0.5690 s: noise 101.3 Hz width 1.2 oct sweep 0.6 oct tilt 5.0 dB/oct, level -13.6 dB; attack 24.1 ms hold 308.8 ms decay 8.9 ms.

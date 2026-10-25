@@ -1,0 +1,12 @@
+[
+ {
+  "ref": "12-Denied",
+  "events": 3,
+  "numbers": 43,
+  "words": 125,
+  "heldInvariant": 80.89,
+  "linesW": 14.8,
+  "excessPct": 4.57,
+  "seconds": 47
+ }
+]
