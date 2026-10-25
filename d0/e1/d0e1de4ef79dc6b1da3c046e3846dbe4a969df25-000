@@ -1,0 +1,37 @@
+{
+  "_doc": "25 October 2026 22:00: sound archetypes in BRIEF form (one or more events each, times relative to the archetype start). Written from sound design practice (attack, body, tail, sweetener), never from a game's audio. Edit a number here and every scene that uses the archetype follows. FR : archétypes sonores au format brief, éditables, sources de toutes les scènes.",
+  "latch_click": {"words": ["latch", "click", "lock", "clasp", "loquet", "serrure", "clic"], "events": [
+    {"t": 0.0, "tone": {"hz": 2350, "glide": 0, "partials": [[1, 0], [2, -9], [3, -6], [5, -14]], "level": -14}, "env": {"points": [[0, -60], [0.8, 0], [12, -18], [45, -60]]}},
+    {"t": 0.0, "noise": {"colour": [-60, -60, -40, -30, -18, -8, -2, 0, -4, -12], "sweep": 0, "level": -20}, "env": {"points": [[0, -60], [0.5, 0], [6, -20], [25, -60]]}}]},
+  "wood_creak": {"words": ["creak", "creaking", "hinge", "grince", "grincement", "door", "porte", "lid", "couvercle"], "events": [
+    {"t": 0.0, "tone": {"hz": 310, "glide": 3.5, "partials": [[1, -6], [2, 0], [3, -3], [4, -8], [5, -6], [7, -12], [9, -16]], "level": -20}, "env": {"points": [[0, -60], [60, -6], [250, 0], [520, -4], [700, -60]]}},
+    {"t": 0.0, "noise": {"colour": [-60, -50, -30, -14, -6, 0, -4, -12, -24, -40], "sweep": 0.4, "level": -30}, "env": {"points": [[0, -60], [80, -4], [400, 0], [700, -60]]}}]},
+  "hinge_squeak": {"words": ["squeak", "rusty", "rouille", "couine", "metal hinge"], "events": [
+    {"t": 0.0, "tone": {"hz": 1150, "glide": 5, "partials": [[1, 0], [2, -8], [3, -14]], "level": -22}, "env": {"points": [[0, -60], [40, 0], [180, -3], [260, -60]]}}]},
+  "wood_thud": {"words": ["thud", "wood", "wooden", "bois", "close", "ferme", "slam", "claque", "chest", "coffre"], "events": [
+    {"t": 0.0, "noise": {"colour": [-12, 0, -2, -6, -12, -20, -30, -40, -50, -60], "sweep": -0.3, "level": -8}, "env": {"points": [[0, -60], [2, 0], [40, -12], [220, -60]]}},
+    {"t": 0.0, "tone": {"hz": 92, "glide": -3, "partials": [[1, 0], [2, -10], [3, -18]], "level": -10}, "env": {"points": [[0, -60], [3, 0], [90, -20], [300, -60]]}},
+    {"t": 0.0, "noise": {"colour": [-60, -60, -40, -20, -8, -2, 0, -6, -16, -30], "sweep": 0, "level": -24}, "env": {"points": [[0, -60], [0.6, 0], [10, -24], [40, -60]]}}]},
+  "metal_clank": {"words": ["metal", "clank", "iron", "fer", "chain", "chaine", "armour", "armure"], "events": [
+    {"t": 0.0, "tone": {"hz": 640, "glide": 0, "partials": [[1, 0], [3, -4], [4, -8], [6, -6], [9, -12], [13, -16]], "level": -14}, "env": {"points": [[0, -60], [1, 0], [60, -14], [700, -60]]}},
+    {"t": 0.0, "noise": {"colour": [-60, -50, -36, -22, -10, -4, 0, -2, -8, -20], "sweep": 0, "level": -18}, "env": {"points": [[0, -60], [0.5, 0], [15, -24], [80, -60]]}}]},
+  "dust_tail": {"words": ["dust", "poussiere", "debris", "settle", "grit", "sable"], "events": [
+    {"t": 0.0, "noise": {"colour": [-60, -50, -36, -24, -14, -8, -4, 0, -2, -10], "sweep": -0.5, "level": -34}, "env": {"points": [[0, -60], [40, -4], [120, 0], [900, -60]]}}]},
+  "treasure_shimmer": {"words": ["treasure", "tresor", "loot", "reward", "recompense", "satisfying", "satisfaisant", "magic", "magie", "shimmer", "sparkle"], "events": [
+    {"t": 0.0, "tone": {"hz": 1318.5, "glide": 0, "partials": [[1, 0], [2, -12], [3, -20]], "level": -22}, "env": {"points": [[0, -60], [30, 0], [500, -14], [1600, -60]]}},
+    {"t": 0.09, "tone": {"hz": 1661.2, "glide": 0, "partials": [[1, 0], [2, -12], [3, -20]], "level": -24}, "env": {"points": [[0, -60], [30, 0], [500, -14], [1500, -60]]}},
+    {"t": 0.18, "tone": {"hz": 1975.5, "glide": 0, "partials": [[1, 0], [2, -12], [3, -20]], "level": -25}, "env": {"points": [[0, -60], [30, 0], [500, -14], [1400, -60]]}},
+    {"t": 0.0, "noise": {"colour": [-60, -60, -60, -50, -36, -20, -8, -2, 0, -4], "sweep": 0.3, "level": -38}, "env": {"points": [[0, -60], [200, 0], [1400, -60]]}}]},
+  "whoosh": {"words": ["whoosh", "swing", "swoosh", "souffle", "sword", "epee", "swipe"], "events": [
+    {"t": 0.0, "noise": {"colour": [-30, -18, -8, -2, 0, -2, -6, -12, -20, -30], "sweep": 1.6, "level": -14}, "env": {"points": [[0, -60], [160, -3], [220, 0], [420, -60]]}}]},
+  "heavy_impact": {"words": ["impact", "hit", "punch", "coup", "boom", "explosion", "heavy", "lourd", "slam"], "events": [
+    {"t": 0.0, "tone": {"hz": 58, "glide": -10, "partials": [[1, 0], [2, -8]], "level": -6}, "env": {"points": [[0, -60], [4, 0], [160, -14], [700, -60]]}},
+    {"t": 0.0, "noise": {"colour": [-8, 0, -1, -4, -8, -12, -16, -22, -30, -40], "sweep": -0.6, "level": -8}, "env": {"points": [[0, -60], [1, 0], [60, -14], [600, -60]]}},
+    {"t": 0.0, "noise": {"colour": [-60, -60, -40, -24, -12, -4, 0, -2, -8, -18], "sweep": 0, "level": -16}, "env": {"points": [[0, -60], [0.5, 0], [8, -20], [30, -60]]}}]},
+  "ui_confirm": {"words": ["confirm", "valider", "ok", "select", "ui", "menu", "notification", "success"], "events": [
+    {"t": 0.0, "tone": {"hz": 880, "glide": 0, "partials": [[1, 0], [2, -14], [3, -22]], "level": -14}, "env": {"points": [[0, -60], [3, 0], [120, -16], [500, -60]]}},
+    {"t": 0.075, "tone": {"hz": 1318.5, "glide": 0, "partials": [[1, 0], [2, -14], [3, -22]], "level": -15}, "env": {"points": [[0, -60], [3, 0], [140, -16], [600, -60]]}}]},
+  "ui_denied": {"words": ["denied", "refus", "error", "erreur", "wrong", "buzz", "invalid"], "events": [
+    {"t": 0.0, "tone": {"hz": 98, "glide": 0, "partials": [[1, -6], [2, -2], [3, 0], [4, -2], [5, -4], [6, -6], [8, -8], [10, -10], [12, -12], [16, -16]], "level": -14}, "env": {"points": [[0, -60], [4, 0], [110, -2], [125, -60]]}},
+    {"t": 0.16, "tone": {"hz": 98, "glide": 0, "partials": [[1, -6], [2, -2], [3, 0], [4, -2], [5, -4], [6, -6], [8, -8], [10, -10], [12, -12], [16, -16]], "level": -14}, "env": {"points": [[0, -60], [4, 0], [110, -2], [125, -60]]}}]}
+}

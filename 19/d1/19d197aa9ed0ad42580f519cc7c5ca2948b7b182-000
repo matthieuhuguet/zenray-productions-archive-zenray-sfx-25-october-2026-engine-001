@@ -1,0 +1,68 @@
+[
+ {
+  "ref": "10-Mail-Open",
+  "method": "P32G32aE",
+  "params": 1765,
+  "heldInvariant": 97.81,
+  "heldExact": 83.2,
+  "ceiling": 97.43,
+  "seconds": 13.5,
+  "gap": -0.38,
+  "atCeiling": true
+ },
+ {
+  "ref": "12-Denied",
+  "method": "P32G32aE",
+  "params": 1611,
+  "heldInvariant": 98.4,
+  "heldExact": 83.25,
+  "ceiling": 97.95,
+  "seconds": 10.7,
+  "gap": -0.45,
+  "atCeiling": true
+ },
+ {
+  "ref": "15-TimeFall-Shelter",
+  "method": "P32G32aE",
+  "params": 2270,
+  "heldInvariant": 98.32,
+  "heldExact": 79.23,
+  "ceiling": 98.45,
+  "seconds": 16.5,
+  "gap": 0.13,
+  "atCeiling": true
+ },
+ {
+  "ref": "21-Awaiting-Signal",
+  "method": "P32G32aE",
+  "params": 1832,
+  "heldInvariant": 98.94,
+  "heldExact": 80.4,
+  "ceiling": 98.88,
+  "seconds": 15.4,
+  "gap": -0.06,
+  "atCeiling": true
+ },
+ {
+  "ref": "25-Inv-Close-End",
+  "method": "P32G32aE",
+  "params": 1777,
+  "heldInvariant": 99.15,
+  "heldExact": 84.16,
+  "ceiling": 98.88,
+  "seconds": 12.7,
+  "gap": -0.27,
+  "atCeiling": true
+ },
+ {
+  "ref": "3-Cufflinks-Open",
+  "method": "P32G32aE",
+  "params": 1904,
+  "heldInvariant": 98.78,
+  "heldExact": 79.17,
+  "ceiling": 99.19,
+  "seconds": 17.0,
+  "gap": 0.41,
+  "atCeiling": false
+ }
+]

@@ -1,0 +1,191 @@
+# 25 October 2026 16:20: gradient polish of a recipe. The recipe numbers (noise grid, gain curve values, partial
+# levels and frequencies) become torch tensors; the render is rebuilt in torch, identical to render.py for the fit
+# seeds; Adam minimises the seed-invariant perceptual loss averaged over several noise seeds, so the recipe cannot
+# learn one noise draw. Breakpoint TIMES stay fixed (the structure comes from the analysis).
+# FR : polissage par gradient des nombres de la recette, sur plusieurs graines de bruit, temps des points figés.
+from __future__ import annotations
+
+import copy
+
+import numpy as np
+import torch
+
+from . import score as _score  # noqa: F401  (puts ZenRayMotionDesign on sys.path)
+from zrmd.audio import ploss as _ploss  # noqa: E402
+
+from .analyze import _interp_matrix
+from .render import band_centres, stft
+
+
+def _ola(frames: torch.Tensor, hop: int, n_fft: int, length: int) -> torch.Tensor:
+    win = torch.hann_window(n_fft, periodic=False, dtype=frames.dtype)
+    f = frames * win
+    count = f.shape[0]
+    total = hop * (count - 1) + n_fft
+    out = torch.nn.functional.fold(f.T[None], (1, total), (1, n_fft), stride=(1, hop))[0, 0, 0]
+    norm = torch.nn.functional.fold((win * win).repeat(count, 1).T[None], (1, total), (1, n_fft), stride=(1, hop))[0, 0, 0]
+    out = out / torch.clamp(norm, min=1e-8)
+    return out[n_fft // 2:n_fft // 2 + length]
+
+
+def _lin_weights(x_new: np.ndarray, x_keys: np.ndarray):
+    j = np.clip(np.searchsorted(x_keys, x_new) - 1, 0, len(x_keys) - 2)
+    w = np.clip((x_new - x_keys[j]) / np.maximum(x_keys[j + 1] - x_keys[j], 1e-12), 0, 1)
+    return torch.as_tensor(j), torch.as_tensor(w, dtype=torch.float64)
+
+
+class TorchRecipe(torch.nn.Module):
+    def __init__(self, recipe: dict, sr: int, seeds: list[int], fit_freq: bool = False):
+        super().__init__()
+        self.fit_freq = fit_freq
+        self.r = copy.deepcopy(recipe)
+        self.sr = sr
+        self.n = int(round(recipe["seconds"] * sr))
+        self.seeds = seeds
+        self.noise = []
+        self.tracks = []
+        for i, layer in enumerate(self.r["layers"]):
+            if layer["type"] == "noise":
+                self._init_noise(i, layer)
+            elif layer["type"] == "partials":
+                self._init_partials(i, layer)
+        # The master gate is kept fixed (it only closes pre-echo); polishing it would relearn the noise draw.
+        self.menv = None
+        if self.r.get("env"):
+            self.menvw = _lin_weights(np.arange(self.n) / sr, np.asarray(self.r["env"]["t"], float))
+            self.menv = torch.tensor(self.r["env"]["db"], dtype=torch.float64)
+
+    def _init_noise(self, i, layer):
+        n_fft, hop, sr = layer.get("nFft", 1024), layer.get("hop", 128), self.sr
+        xs = []
+        for s in self.seeds:
+            rng = np.random.default_rng(s * 1009 + i)
+            xs.append(stft(rng.standard_normal(self.n), n_fft, hop))
+        frames = xs[0].shape[1]
+        f = np.fft.rfftfreq(n_fft, 1 / sr)
+        bf = _interp_matrix(np.log(np.maximum(f, 1.0)), np.log(band_centres(layer["lo"], layer["hi"], len(layer["grid"]))))
+        mask = ((f < layer["lo"] * 0.7) | (f > layer["hi"] * 1.3))
+        tt = _interp_matrix(np.arange(frames) * hop / sr, np.asarray(layer["times"], float))
+        d = {"i": i, "X": [torch.as_tensor(x) for x in xs], "bf": torch.as_tensor(bf), "tt": torch.as_tensor(tt),
+             "mask": torch.as_tensor(mask), "nfft": n_fft, "hop": hop,
+             "norm": float(np.sqrt(np.sum(np.hanning(n_fft) ** 2))),
+             "grid": torch.nn.Parameter(torch.tensor(layer["grid"], dtype=torch.float64))}
+        self.register_parameter(f"grid{i}", d["grid"])
+        env = layer.get("env")
+        if env:
+            d["envw"] = _lin_weights(np.arange(self.n) / sr, np.asarray(env["t"], float))
+            d["env"] = torch.nn.Parameter(torch.tensor(env["db"], dtype=torch.float64))
+            self.register_parameter(f"env{i}", d["env"])
+        self.noise.append(d)
+
+    def _init_partials(self, i, layer):
+        sr = self.sr
+        for k, p in enumerate(layer["tracks"]):
+            tt = np.asarray(p["t"], float)
+            lo, hi = int(max(0, tt[0] * sr)), int(min(self.n, tt[-1] * sr + 1))
+            if hi <= lo + 1 or len(tt) < 2:
+                continue
+            seg = np.arange(lo, hi) / sr
+            m = hi - lo
+            fade = np.minimum(1.0, np.minimum(np.arange(m), np.arange(m)[::-1]) / (0.002 * sr))
+            d = {"layer": i, "k": k, "lo": lo, "hi": hi, "w": _lin_weights(seg, tt), "fade": torch.as_tensor(fade),
+                 "phase": p.get("phase", 0.0),
+                 "lhz": torch.nn.Parameter(torch.tensor(np.log(p["hz"]), dtype=torch.float64)),
+                 "db": torch.nn.Parameter(torch.tensor(p["db"], dtype=torch.float64))}
+            if self.fit_freq:
+                self.register_parameter(f"lhz{i}_{k}", d["lhz"])
+            else:
+                d["lhz"].requires_grad_(False)
+            self.register_parameter(f"db{i}_{k}", d["db"])
+            self.tracks.append(d)
+
+    @staticmethod
+    def _interp(v, w):
+        j, a = w
+        return v[j] * (1 - a) + v[j + 1] * a
+
+    def forward(self, seed_index: int) -> torch.Tensor:
+        y = torch.zeros(self.n, dtype=torch.float64)
+        for d in self.noise:
+            gdb = d["bf"] @ d["grid"] @ d["tt"].T
+            gdb = torch.where(d["mask"][:, None], torch.full_like(gdb, -160.0), gdb)
+            X = d["X"][seed_index] * (10 ** (gdb / 20.0) / d["norm"])
+            frames = torch.fft.irfft(X.T, n=d["nfft"], dim=1)
+            yy = _ola(frames, d["hop"], d["nfft"], self.n)
+            if "env" in d:
+                yy = yy * 10 ** (self._interp(d["env"], d["envw"]) / 20.0)
+            y = y + yy * 10 ** (self.r["layers"][d["i"]].get("gainDb", 0.0) / 20.0)
+        for d in self.tracks:
+            f = torch.exp(self._interp(d["lhz"], d["w"]))
+            a = 10 ** (self._interp(d["db"], d["w"]) / 20.0)
+            ph = 2 * np.pi * torch.cumsum(f, 0) / self.sr + d["phase"]
+            seg = a * d["fade"] * torch.sin(ph) * 10 ** (self.r["layers"][d["layer"]].get("gainDb", 0.0) / 20.0)
+            y = torch.cat([y[:d["lo"]], y[d["lo"]:d["hi"]] + seg, y[d["hi"]:]])
+        if self.menv is not None:
+            y = y * 10 ** (self._interp(self.menv, self.menvw) / 20.0)
+        return y * 10 ** (self.r.get("gainDb", 0.0) / 20.0)
+
+    def export(self) -> dict:
+        r = copy.deepcopy(self.r)
+        for d in self.noise:
+            r["layers"][d["i"]]["grid"] = np.round(d["grid"].detach().numpy(), 2).tolist()
+            if "env" in d:
+                r["layers"][d["i"]]["env"]["db"] = np.round(d["env"].detach().numpy(), 2).tolist()
+        for d in self.tracks:
+            t = r["layers"][d["layer"]]["tracks"][d["k"]]
+            t["hz"] = np.round(np.exp(d["lhz"].detach().numpy()), 2).tolist()
+            t["db"] = np.round(d["db"].detach().numpy(), 2).tolist()
+        return r
+
+
+def _smooth_db_t(y: torch.Tensor, n_fft=1024, hop=256) -> torch.Tensor:
+    """Torch twin of score._smooth_db: power STFT smoothed over 9 bins x 5 frames, in dB."""
+    pad = torch.nn.functional.pad(y[None, None], (n_fft // 2, n_fft), mode="constant")[0, 0]
+    X = torch.stft(pad, n_fft, hop, window=torch.hann_window(n_fft, periodic=False, dtype=y.dtype), center=False,
+                   return_complex=True)
+    p = (X.abs() ** 2)[None, None]
+    p = torch.nn.functional.avg_pool2d(p, (9, 5), 1, padding=(4, 2), count_include_pad=False)[0, 0]
+    return 10 * torch.log10(p + 1e-20)
+
+
+def polish(recipe: dict, ref: np.ndarray, sr: int, steps: int = 150, lr: float = 0.3, seeds=tuple(range(100, 116)),
+           per_step: int = 2, excess_weight: float = 1.0, excess_db: float = 6.0,
+           invariant_weight: float = 1.0, log=None) -> dict:
+    cfg = _score._cfg(True)
+    tgt = _ploss.Target(np.asarray(ref, np.float32), sr, "cpu", cfg)
+    model = TorchRecipe(recipe, sr, list(seeds))
+    opt = torch.optim.Adam(model.parameters(), lr=lr)
+    w = cfg["ploss"]["weights"]
+    with torch.no_grad():
+        ref_db = _smooth_db_t(torch.as_tensor(np.asarray(ref, np.float64)))
+        live = ref_db > ref_db.max() - 60
+    best, best_r = 1e9, recipe
+    rng = np.random.default_rng(0)
+    for step in range(steps):
+        opt.zero_grad()
+        tot = 0.0
+        # Fresh seeds every step (a pool, sampled), so the recipe cannot learn one noise draw.
+        for si in rng.choice(len(seeds), per_step, replace=False):
+            y = model(int(si)).float()
+            # The recipe length is rounded to 0.1 ms: match the reference sample count exactly.
+            y = torch.nn.functional.pad(y, (0, max(0, len(ref) - len(y))))[:len(ref)]
+            e = _ploss.errors(y, tgt)
+            tot = tot + sum(w[k] * e[k] ** 2 for k in e) / per_step
+            if excess_weight:
+                # Never add what is not there: hinge on cells louder than the reference by more than excess_db.
+                our_db = _smooth_db_t(y.double())
+                m = live | (our_db > ref_db.max() - 60)
+                over = torch.relu(our_db - ref_db - excess_db)[m]
+                tot = tot + excess_weight * torch.mean((over / 3.0) ** 2) / per_step
+        v = float(tot.detach())
+        ema = v if step == 0 else 0.8 * ema + 0.2 * v
+        if step > steps // 2 and ema < best:
+            best, best_r = ema, model.export()
+        if log and step % 25 == 0:
+            log(f"step {step} E2 {v:.3f} score {_ploss.score_from_e2(v, cfg):.2f}")
+        tot.backward()
+        for d in model.tracks:  # frequency (when fitted) moves in log Hz, much smaller steps than dB
+            if d["lhz"].grad is not None:
+                d["lhz"].grad *= 0.01
+        opt.step()
+    return best_r if best_r is not recipe else model.export()

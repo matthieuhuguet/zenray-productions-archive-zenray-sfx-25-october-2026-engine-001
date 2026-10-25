@@ -1,0 +1,282 @@
+# 25 October 2026 15:45: analysis by synthesis. A reference sound becomes a recipe, never the reverse: the recipe
+# keeps only a coarse description (band x keyframe levels, a few sinusoid breakpoints, click times), no samples.
+# FR : analyse par synthèse ; la référence devient une recette grossière, jamais un échantillon copié.
+from __future__ import annotations
+
+import numpy as np
+
+from .render import SR, band_centres, stft, render_partials
+
+
+NOISE_OFFSET_DB = 0.0  # measured by Scripts/CalibrateNoise.py, see docs/METHOD.md
+
+
+def _db(p):
+    return 10 * np.log10(np.maximum(p, 1e-20))
+
+
+def _interp_matrix(x_new: np.ndarray, x_keys: np.ndarray) -> np.ndarray:
+    """Matrix M with M @ values_at_keys == np.interp(x_new, x_keys, values) (linear, clamped)."""
+    m = np.zeros((len(x_new), len(x_keys)))
+    for i, x in enumerate(x_new):
+        j = np.searchsorted(x_keys, x) - 1
+        if j < 0:
+            m[i, 0] = 1
+        elif j >= len(x_keys) - 1:
+            m[i, -1] = 1
+        else:
+            w = (x - x_keys[j]) / (x_keys[j + 1] - x_keys[j])
+            m[i, j], m[i, j + 1] = 1 - w, w
+    return m
+
+
+def keyframes(power: np.ndarray, hop_s: float, count: int, adaptive: bool) -> np.ndarray:
+    frames = power.shape[1]
+    total = (frames - 1) * hop_s
+    if not adaptive:
+        return np.linspace(0, total, count)
+    # Keys denser where the spectrum changes: quantiles of cumulative positive spectral flux (in dB), mixed 50/50
+    # with uniform spacing so silent stretches still get keys.
+    d = _db(power + power.max() * 1e-8)
+    flux = np.maximum(np.diff(d, axis=1), 0).sum(0)
+    flux = np.concatenate([[flux.max()], flux])
+    cdf = np.cumsum(flux / flux.sum() * 0.5 + 0.5 / frames)
+    q = np.interp(np.linspace(0, cdf[-1], count), cdf, np.arange(frames))
+    keys = np.unique(np.round(q)) * hop_s
+    # Each onset gets a key one frame before it so the attack stays sharp.
+    return keys
+
+
+def fit_grid(power: np.ndarray, sr: int, n_fft: int, hop: int, bands: int, keys: np.ndarray, lo: float, hi: float,
+             floor_db: float = 90.0, smooth_bins: int = 5, smooth_frames: int = 3) -> np.ndarray:
+    """Least squares in dB: interp_f(G) interp_t^T ~ D, D the target power per bin (floored). Exact, no iteration,
+    because the expected power of the rendered noise IS the interpolated grid."""
+    f = np.fft.rfftfreq(n_fft, 1 / sr)
+    sel = (f >= lo) & (f <= hi)
+    # Smooth the power before taking dB: the log of a noisy cell is biased 2.5 dB low (chi-square, 2 dof).
+    from scipy.ndimage import uniform_filter
+    d = _db(uniform_filter(power, size=(smooth_bins, smooth_frames), mode="nearest"))
+    d = np.maximum(d, d.max() - floor_db)[sel]
+    # Weight louder cells more (the judge ignores what is 60 dB down): w = 1 above max-60, falling below.
+    w = np.clip(1 - (d.max() - 60 - d) / 30, 0.05, 1)
+    bf = _interp_matrix(np.log(f[sel]), np.log(band_centres(lo, hi, bands)))
+    tt = _interp_matrix(np.arange(power.shape[1]) * hop / sr, keys)
+    # Alternating weighted least squares on the separable model (two passes are enough here).
+    g = np.linalg.pinv(bf) @ d @ np.linalg.pinv(tt).T
+    for _ in range(3):
+        r = d - bf @ g @ tt.T
+        g += np.linalg.pinv(bf) @ (r * w) @ np.linalg.pinv(tt).T / np.maximum(w.mean(), 1e-3)
+    return g
+
+
+def track_partials(x: np.ndarray, sr: int, n_fft: int = 4096, hop: int = 256, peak_db: float = 12.0,
+                   max_tracks: int = 24, min_ms: float = 25.0, cents: float = 60.0, simplify_db: float = 1.5,
+                   simplify_cents: float = 15.0) -> list[dict]:
+    """McAulay-Quatieri style tracking: spectral peaks that stand peak_db above the local median, linked frame to
+    frame within `cents`, kept if longer than min_ms, then simplified to few breakpoints (Douglas-Peucker)."""
+    X = np.abs(stft(x, n_fft, hop)) ** 2
+    db = _db(X)
+    nb, nf = db.shape
+    from scipy.ndimage import median_filter
+    local = median_filter(db, size=(31, 1))
+    top = db.max()
+    freqs = np.fft.rfftfreq(n_fft, 1 / sr)
+    peaks = []
+    for j in range(nf):
+        c = db[:, j]
+        m = (c[1:-1] > c[:-2]) & (c[1:-1] >= c[2:]) & (c[1:-1] > local[1:-1, j] + peak_db) & (c[1:-1] > top - 70)
+        k = np.nonzero(m)[0] + 1
+        a, b, g = c[k - 1], c[k], c[k + 1]
+        off = 0.5 * (a - g) / np.where(a - 2 * b + g == 0, -1e-9, a - 2 * b + g)
+        hz = (k + off) * sr / n_fft
+        lvl = b - 0.25 * (a - g) * off
+        peaks.append(list(zip(hz[hz > 30], lvl[hz > 30])))
+    tracks, live = [], []
+    for j in range(nf):
+        used, nxt = set(), []
+        for tr in live:
+            hz0 = tr["hz"][-1]
+            best, bd = None, cents
+            for i, (h, l) in enumerate(peaks[j]):
+                if i in used:
+                    continue
+                dc = abs(1200 * np.log2(h / hz0))
+                if dc < bd:
+                    best, bd = i, dc
+            if best is None:
+                tracks.append(tr)
+            else:
+                used.add(best)
+                h, l = peaks[j][best]
+                tr["t"].append(j * hop / sr); tr["hz"].append(h); tr["db"].append(l)
+                nxt.append(tr)
+        for i, (h, l) in enumerate(peaks[j]):
+            if i not in used:
+                nxt.append({"t": [j * hop / sr], "hz": [h], "db": [l]})
+        live = nxt
+    tracks += live
+    tracks = [t for t in tracks if (t["t"][-1] - t["t"][0]) * 1000 >= min_ms]
+    # Peak level of a Hann-windowed sinusoid of amplitude A: (A * sum(win) / 2)^2.
+    norm = _db(np.array([(np.hanning(n_fft).sum() / 2) ** 2]))[0]
+    for t in tracks:
+        t["db"] = list(np.array(t["db"]) - norm)
+        t["energy"] = float(np.sum(10 ** (np.array(t["db"]) / 10)) * hop / sr)
+    tracks.sort(key=lambda t: -t["energy"])
+    out = []
+    for t in tracks[:max_tracks]:
+        tt, hz, dbs = np.array(t["t"]), np.array(t["hz"]), np.array(t["db"])
+        keep = _simplify(tt, 1200 * np.log2(hz), dbs, simplify_cents, simplify_db)
+        # Extend by one hop each side with a -30 dB ramp so the 2 ms fade does not cut the attack.
+        out.append({"t": [round(float(v), 4) for v in tt[keep]], "hz": [round(float(v), 2) for v in hz[keep]],
+                    "db": [round(float(v), 2) for v in dbs[keep]]})
+    return out
+
+
+def _simplify(t, c, d, tol_c, tol_d):
+    keep = {0, len(t) - 1}
+
+    def rec(i, j):
+        if j <= i + 1:
+            return
+        w = (t[i + 1:j] - t[i]) / max(t[j] - t[i], 1e-9)
+        ec = np.abs(c[i + 1:j] - (c[i] + w * (c[j] - c[i]))) / tol_c
+        ed = np.abs(d[i + 1:j] - (d[i] + w * (d[j] - d[i]))) / tol_d
+        e = np.maximum(ec, ed)
+        k = int(np.argmax(e))
+        if e[k] > 1:
+            keep.add(i + 1 + k)
+            rec(i, i + 1 + k)
+            rec(i + 1 + k, j)
+
+    rec(0, len(t) - 1)
+    return sorted(keep)
+
+
+def analyze(x: np.ndarray, sr: int = SR, *, bands: int = 32, keys: int = 32, adaptive: bool = True,
+            partials: int = 0, lo: float = 30.0, hi: float = 20000.0, n_fft: int = 1024, hop: int = 128,
+            env_tol_db: float = 0.0, track: dict | None = None, demod: bool = False, master_tol_db: float = 0.0, name: str = "sfx") -> dict:
+    """Reference -> recipe. partials=0 gives the noise-grid-only method."""
+    layers = []
+    power = np.abs(stft(x, n_fft, hop)) ** 2
+    if partials:
+        tr = track_partials(x, sr, max_tracks=partials, **(track or {}))
+        if demod:
+            tr = demod_amplitudes(x, sr, tr)
+        lay = {"type": "partials", "name": "tones", "tracks": tr}
+        y = render_partials(lay, len(x), sr)
+        pp = np.abs(stft(y, n_fft, hop)) ** 2
+        power = np.maximum(power - pp, power * 1e-3)
+        layers.append(lay)
+    kt = keyframes(power, hop / sr, keys, adaptive)
+    g = fit_grid(power, sr, n_fft, hop, bands, kt, lo, hi)
+    g = g + NOISE_OFFSET_DB
+    env = None
+    if env_tol_db:
+        env = fit_env(x, sr, g, kt, lo, hi, n_fft, hop, layers, env_tol_db)
+    layers.insert(0, {"type": "noise", "name": "body", "lo": lo, "hi": hi, "nFft": n_fft, "hop": hop,
+                      "times": [round(float(v), 4) for v in kt], "grid": np.round(g, 2).tolist()})
+    if env:
+        layers[0]["env"] = env
+    r = {"name": name, "seconds": round(len(x) / sr, 4), "seed": 0, "gainDb": 0.0, "layers": layers}
+    if master_tol_db:
+        r["env"] = fit_master_env(x, sr, r, master_tol_db)
+    return r
+
+
+def param_count(recipe: dict) -> int:
+    n = 0
+    for l in recipe["layers"]:
+        if l["type"] == "noise":
+            n += np.size(l["grid"]) + len(l["times"])
+            n += 2 * len(l.get("env", {}).get("t", []))
+        elif l["type"] == "partials":
+            n += sum(3 * len(t["t"]) for t in l["tracks"])
+        elif l["type"] == "click":
+            n += 3 * len(l["hits"])
+    n += 2 * len(recipe.get("env", {}).get("t", []))
+    return n
+
+
+def fit_env(x, sr, g, kt, lo, hi, n_fft, hop, layers, tol_db, ms=2.5):
+    """Broadband gain curve for the noise layer: target frame energy minus the partials, over the expected energy
+    of the grid, smoothed at `ms`, simplified to breakpoints within tol_db (Douglas-Peucker)."""
+    from .render import grid_to_bins
+    h = int(sr * ms / 1000)
+    P = np.abs(stft(x, n_fft, h)) ** 2
+    et = P.sum(0)
+    if len(layers):
+        y = render_partials(layers[0], len(x), sr)
+        et = np.maximum(et - (np.abs(stft(y, n_fft, h)) ** 2).sum(0), et * 1e-3)
+    gb = grid_to_bins(g, kt, lo, hi, n_fft, h, P.shape[1], sr)
+    en = (10 ** (gb / 10)).sum(0)
+    from scipy.ndimage import uniform_filter1d
+    d = 10 * np.log10(uniform_filter1d(et, 3) + 1e-20) - 10 * np.log10(uniform_filter1d(en, 3) + 1e-20)
+    lvl = 10 * np.log10(et + 1e-20)
+    d[lvl < lvl.max() - 100] = -60.0
+    d = np.clip(d, -60, 20)
+    t = np.arange(len(d)) * h / sr
+    keep = _simplify(t, np.zeros_like(d), d, 1e9, tol_db)
+    return {"t": [round(float(v), 4) for v in t[keep]], "db": [round(float(v), 2) for v in d[keep]]}
+
+
+def demod_amplitudes(x: np.ndarray, sr: int, tracks: list[dict], pad_s: float = 0.06, hop: int = 64,
+                     min_win: int = 384, max_win: int = 4096, range_db: float = 60.0, tol_db: float = 1.0) -> list[dict]:
+    """25 October 2026 17:40: re-estimate each partial's level by heterodyne demodulation. The 4096 analysis window
+    smears a partial over +-42 ms (pre-echo, hiss in silences); multiplying the reference by exp(-i phase(t)) along
+    the track's own frequency and low-passing with a short Hann window (sized by the distance to the nearest other
+    partial, so neighbours do not leak in) gives its amplitude at ~10 ms resolution. Breakpoints are simplified.
+    FR : ré-estimation de l'amplitude de chaque partiel par démodulation, attaques nettes."""
+    n = len(x)
+    t_all = np.arange(n) / sr
+    mids = [float(np.exp(np.mean(np.log(t["hz"])))) for t in tracks]
+    out = []
+    for i, tr in enumerate(tracks):
+        others = [m for j, m in enumerate(mids) if j != i and abs(np.log2(m / mids[i])) < 1]
+        spacing = min([abs(m - mids[i]) for m in others] + [400.0])
+        win = int(np.clip(2.0 * sr / max(spacing, 1.0), min_win, max_win)) | 1
+        lo = max(0, int((tr["t"][0] - pad_s) * sr)); hi = min(n, int((tr["t"][-1] + pad_s) * sr) + 1)
+        tt = t_all[lo:hi]
+        f = np.exp(np.interp(tt, tr["t"], np.log(tr["hz"])))
+        ph = 2 * np.pi * np.cumsum(f) / sr
+        z = x[lo:hi] * np.exp(-1j * ph)
+        w = np.hanning(win); w /= w.sum()
+        a = 2 * np.abs(np.convolve(z, w, mode="same"))
+        db = 20 * np.log10(a + 1e-12)
+        k = np.arange(0, len(tt), hop)
+        tk, dk = tt[k], db[k]
+        live = dk > dk.max() - range_db
+        if live.sum() < 2:
+            continue
+        a0, a1 = np.nonzero(live)[0][[0, -1]]
+        tk, dk = tk[a0:a1 + 1], np.maximum(dk[a0:a1 + 1], dk.max() - range_db)
+        keep = _simplify(tk, np.zeros_like(dk), dk, 1e9, tol_db)
+        hz = np.exp(np.interp(tk[keep], tr["t"], np.log(tr["hz"])))
+        out.append({"t": [round(float(v), 4) for v in tk[keep]], "hz": [round(float(v), 2) for v in hz],
+                    "db": [round(float(v), 2) for v in dk[keep]]})
+    return out
+
+
+def fit_master_env(x, sr, recipe, tol_db, ms=2.5, seeds=(11, 12, 13, 14), dead_db=3.0, smooth_ms=12.5):
+    """25 October 2026 17:55: master gain curve = reference frame energy over the mean frame energy of the render
+    (four seeds, so it follows the recipe and not one noise draw), smoothed over 3 frames, simplified within tol_db.
+    FR : enveloppe maîtresse, rapport entre la référence et la moyenne de quatre rendus."""
+    from scipy.ndimage import uniform_filter1d
+    from .render import render
+    h = int(sr * ms / 1000)
+    def fe(v):
+        k = len(v) // h
+        return uniform_filter1d(np.mean(np.asarray(v[:k * h]).reshape(k, h) ** 2, 1), 3)
+    er = fe(x)
+    eo = np.mean([fe(render(recipe, sr, seed=s)) for s in seeds], 0)
+    d = 10 * np.log10(er + 1e-20) - 10 * np.log10(eo + 1e-20)
+    # A gate, not a shaper: only attenuate, only beyond dead_db, smoothed at smooth_ms (a finer curve copies the
+    # random envelope of the reference's noise draw and its amplitude modulation blurs the tonal lines).
+    d = np.where(d < -dead_db, d + dead_db, 0.0)
+    d = np.clip(d, -80, 0)
+    from scipy.ndimage import minimum_filter1d
+    k = max(1, int(round(smooth_ms / ms)))
+    from scipy.ndimage import median_filter
+    d = median_filter(d, size=k | 1, mode="nearest")  # removes draw flicker without spreading a gate into an attack
+    t = (np.arange(len(d)) + 0.5) * h / sr
+    keep = _simplify(t, np.zeros_like(d), d, 1e9, tol_db)
+    return {"t": [round(float(v), 4) for v in t[keep]], "db": [round(float(v), 2) for v in d[keep]]}

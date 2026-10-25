@@ -1,0 +1,92 @@
+{
+  "_doc": "25 October 2026 22:10: the macro panel (the HDA interface of every sound) and the three proposals. Ranges, defaults and the three proposal presets live here only. FR : panneau de macros et trois propositions. Labels in French for the app (25 October 2026).",
+  "macros": {
+    "pitch": {
+      "unit": "st",
+      "min": -24,
+      "max": 24,
+      "default": 0,
+      "step": 0.5,
+      "label": "Hauteur",
+      "help": "transpose tons et couleurs de souffle"
+    },
+    "time": {
+      "unit": "x",
+      "min": 0.25,
+      "max": 4,
+      "default": 1,
+      "step": 0.05,
+      "label": "Durée",
+      "help": "étire départs et enveloppes"
+    },
+    "weight": {
+      "unit": "",
+      "min": -1,
+      "max": 1,
+      "default": 0,
+      "step": 0.05,
+      "label": "Poids",
+      "help": "plus lourd = plus grave, plus long, plus de basses"
+    },
+    "bright": {
+      "unit": "",
+      "min": -1,
+      "max": 1,
+      "default": 0,
+      "step": 0.05,
+      "label": "Brillance",
+      "help": "penche partiels et couleurs vers les aigus"
+    },
+    "space": {
+      "unit": "",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "step": 0.05,
+      "label": "Espace",
+      "help": "queue de pièce, du sec à la salle"
+    },
+    "gain": {
+      "unit": "dB",
+      "min": -24,
+      "max": 12,
+      "default": 0,
+      "step": 0.5,
+      "label": "Niveau",
+      "help": "niveau de sortie"
+    },
+    "seed": {
+      "unit": "",
+      "min": 0,
+      "max": 99,
+      "default": 0,
+      "step": 1,
+      "label": "Prise",
+      "help": "un autre tirage du même son"
+    }
+  },
+  "proposals": [
+    {
+      "name": "A, tel que décrit",
+      "macros": {}
+    },
+    {
+      "name": "B, plus lourd et sombre",
+      "macros": {
+        "weight": 0.55,
+        "bright": -0.4,
+        "space": 0.35,
+        "seed": 1
+      }
+    },
+    {
+      "name": "C, plus léger et brillant",
+      "macros": {
+        "weight": -0.45,
+        "bright": 0.45,
+        "space": 0.15,
+        "seed": 2
+      }
+    }
+  ]
+}

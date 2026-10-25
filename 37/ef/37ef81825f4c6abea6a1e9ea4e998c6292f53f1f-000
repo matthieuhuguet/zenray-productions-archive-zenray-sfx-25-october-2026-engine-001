@@ -1,0 +1,75 @@
+# 25 October 2026 23:10: the long text, the identity recipe written as readable lines and read back. One line per
+# partial ("partial 0.0293 s 196.0 Hz -24.1 dB, 0.1500 s 198.2 Hz -60.0 dB"), one line per noise band, one line for
+# each gain curve. Printed at 0.1 ms, 0.01 Hz, 0.01 dB, so the reading renders the same sound.
+# FR : le texte long, la recette d'identité écrite en lignes lisibles et relue.
+from __future__ import annotations
+
+import re
+
+
+def to_text(r: dict) -> str:
+    L = [f"{r.get('name', 'sfx')}, {r['seconds']:.4f} s, seed {r.get('seed', 0)}, gain {r.get('gainDb', 0.0):.2f} dB."]
+    if r.get("env"):
+        L.append("master gate " + " ".join(f"{t:.4f}/{d:.2f}" for t, d in zip(r["env"]["t"], r["env"]["db"])) + " s/dB.")
+    for l in r["layers"]:
+        if l["type"] == "noise":
+            L.append(f"noise layer {l['lo']:.1f} to {l['hi']:.1f} Hz, {len(l['grid'])} bands, fft {l['nFft']} hop {l['hop']}, "
+                     f"gain {l.get('gainDb', 0.0):.2f} dB, keys " + " ".join(f"{t:.4f}" for t in l["times"]) + " s.")
+            for i, row in enumerate(l["grid"]):
+                L.append(f"band {i}: " + " ".join(f"{v:.2f}" for v in row) + " dB.")
+            if l.get("env"):
+                L.append("noise curve " + " ".join(f"{t:.4f}/{d:.2f}" for t, d in zip(l["env"]["t"], l["env"]["db"])) + " s/dB.")
+        elif l["type"] == "partials":
+            L.append(f"partials layer, {len(l['tracks'])} partials, gain {l.get('gainDb', 0.0):.2f} dB.")
+            for p in l["tracks"]:
+                L.append("partial " + ", ".join(f"{t:.4f} s {h:.2f} Hz {d:.2f} dB" for t, h, d in zip(p["t"], p["hz"], p["db"])) + ".")
+    return "\n".join(L)
+
+
+_N = r"(-?\d+(?:\.\d+)?)"
+
+
+def from_text(text: str) -> dict:
+    rows = [x.strip() for x in text.strip().splitlines() if x.strip()]
+    m = re.fullmatch(rf"(.+), {_N} s, seed (\d+), gain {_N} dB\.", rows[0])
+    if not m:
+        raise ValueError(f"header not understood: {rows[0]!r}")
+    r = {"name": m.group(1), "seconds": float(m.group(2)), "seed": int(m.group(3)), "gainDb": float(m.group(4)), "layers": []}
+    cur = None
+    for x in rows[1:]:
+        if x.startswith("master gate "):
+            t, d = zip(*(map(float, p.split("/")) for p in x[12:-len(" s/dB.")].split()))
+            r["env"] = {"t": list(t), "db": list(d)}
+        elif x.startswith("noise layer "):
+            m = re.fullmatch(rf"noise layer {_N} to {_N} Hz, (\d+) bands, fft (\d+) hop (\d+), gain {_N} dB, keys ([-\d. ]+) s\.", x)
+            if not m:
+                raise ValueError(f"noise layer not understood: {x[:80]!r}")
+            cur = {"type": "noise", "lo": float(m.group(1)), "hi": float(m.group(2)), "nFft": int(m.group(4)), "hop": int(m.group(5)),
+                   "gainDb": float(m.group(6)), "times": [float(v) for v in m.group(7).split()], "grid": []}
+            r["layers"].append(cur)
+        elif x.startswith("band "):
+            m = re.fullmatch(r"band (\d+): ([-\d. ]+) dB\.", x)
+            if not m or cur is None or cur["type"] != "noise":
+                raise ValueError(f"band line not understood: {x[:80]!r}")
+            cur["grid"].append([float(v) for v in m.group(2).split()])
+        elif x.startswith("noise curve "):
+            t, d = zip(*(map(float, p.split("/")) for p in x[12:-len(" s/dB.")].split()))
+            cur["env"] = {"t": list(t), "db": list(d)}
+        elif x.startswith("partials layer"):
+            m = re.fullmatch(rf"partials layer, (\d+) partials, gain {_N} dB\.", x)
+            if not m:
+                raise ValueError(f"partials layer not understood: {x!r}")
+            cur = {"type": "partials", "gainDb": float(m.group(2)), "tracks": []}
+            r["layers"].append(cur)
+        elif x.startswith("partial "):
+            pt = rf"{_N} s {_N} Hz {_N} dB"
+            # Strict: the whole line must be points, nothing skipped silently.
+            if not re.fullmatch(rf"partial {pt}(?:, {pt})*\.", x):
+                raise ValueError(f"partial line not understood: {x[:80]!r}")
+            pts = re.findall(pt, x)
+            if cur is None or cur["type"] != "partials":
+                raise ValueError(f"partial line not understood: {x[:80]!r}")
+            cur["tracks"].append({"t": [float(a) for a, _, _ in pts], "hz": [float(b) for _, b, _ in pts], "db": [float(c) for _, _, c in pts]})
+        else:
+            raise ValueError(f"line not understood: {x[:80]!r}")
+    return r

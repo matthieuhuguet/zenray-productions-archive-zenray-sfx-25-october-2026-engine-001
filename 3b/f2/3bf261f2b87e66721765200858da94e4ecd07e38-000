@@ -1,0 +1,231 @@
+# 25 October 2026 19:05: the BRIEF, ZenRay SFX's text level. A sound is a few events; each event is a tone (pitch,
+# glide, harmonics, tilt, inharmonicity) and/or a noise (centre, width), with an envelope (attack, hold, decay) and a
+# level. The brief prints to an exact controlled English text and parses back to the same numbers, and it compiles to
+# a regular recipe (partials + noise layers), so text -> sound needs no reference and no AI.
+# FR : le BRIEF, le niveau texte. Quelques événements, un texte exact dans les deux sens, compilé en recette.
+from __future__ import annotations
+
+import math
+import re
+
+import numpy as np
+
+# Every brief number, its unit, its bounds and its default: the single interface (used by fit, UI, parser).
+TONE = {
+    "hz": ("Hz", 30.0, 12000.0, 440.0, "log"),
+    "glide": ("st", -36.0, 36.0, 0.0, "lin"),          # pitch change over the event, in semitones
+    "harmonics": ("", 1.0, 40.0, 1.0, "int"),
+    "tilt": ("dB/oct", -24.0, 6.0, -6.0, "lin"),
+    "stretch": ("", 0.0, 0.08, 0.0, "lin"),            # inharmonicity: f_k = k f0 sqrt(1 + B k^2)
+    "level": ("dB", -80.0, 0.0, -12.0, "lin"),
+}
+NOISE = {
+    "hz": ("Hz", 60.0, 16000.0, 2000.0, "log"),
+    "width": ("oct", 0.2, 9.0, 3.0, "lin"),
+    "sweep": ("oct", -4.0, 4.0, 0.0, "lin"),          # centre movement over the event, in octaves
+    "tilt": ("dB/oct", -12.0, 12.0, 0.0, "lin"),       # slope across the band, for broad hisses and rumbles
+    "level": ("dB", -80.0, 0.0, -18.0, "lin"),
+}
+# 25 October 2026 20:15: a noise may carry a COLOUR, its level at the ten octave centres below (dB, 0 = loudest
+# octave). With a colour, hz/width/tilt are ignored; sweep still moves the whole colour. FR : couleur du souffle.
+OCTAVES = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
+COLOUR = ("dB", -60.0, 0.0, 0.0, "lin")
+
+ENV = {
+    "attack": ("ms", 0.5, 400.0, 3.0, "log"),
+    "hold": ("ms", 0.0, 2000.0, 0.0, "lin"),
+    "decay": ("ms", 5.0, 4000.0, 300.0, "log"),       # time to fall 60 dB after the hold
+}
+
+
+def event(t=0.0, tone=None, noise=None, env=None) -> dict:
+    e = {"t": float(t), "env": {k: v[3] for k, v in ENV.items()}}
+    e["env"].update(env or {})
+    if tone is not None:
+        e["tone"] = {k: v[3] for k, v in TONE.items()}
+        e["tone"].update(tone)
+    if noise is not None:
+        e["noise"] = {k: v[3] for k, v in NOISE.items()}
+        e["noise"].update(noise)
+    return e
+
+
+# ---------------------------------------------------------------- text, both ways
+def _fmt(v, unit):
+    if unit == "Hz":
+        return f"{v:.1f} Hz" if v < 1000 else f"{v / 1000:.3f} kHz"
+    if unit == "":
+        return f"{v:.3f}" if abs(v - round(v)) > 1e-9 else f"{int(round(v))}"
+    return f"{v:.1f} {unit}"
+
+
+def to_text(brief: dict) -> str:
+    """Exact controlled English. One line per event, a header line with name and length."""
+    lines = [f"{brief.get('name', 'sfx')}, {brief['seconds']:.3f} s, seed {brief.get('seed', 0)}."]
+    for e in brief["events"]:
+        parts = []
+        if "tone" in e:
+            t = e["tone"]
+            if t.get("partials"):
+                parts.append(f"tone {_fmt(t['hz'], 'Hz')} glide {_fmt(t['glide'], 'st')}, partials "
+                             + " ".join(f"{int(k)}/{v:.1f}" for k, v in t["partials"]) + f", level {_fmt(t['level'], 'dB')}")
+            else:
+                parts.append(f"tone {_fmt(t['hz'], 'Hz')} glide {_fmt(t['glide'], 'st')}, {int(round(t['harmonics']))} harmonics "
+                             f"tilt {_fmt(t['tilt'], 'dB/oct')} stretch {t['stretch']:.4f}, level {_fmt(t['level'], 'dB')}")
+        if "noise" in e:
+            n = e["noise"]
+            if "colour" in n:
+                parts.append("noise colour " + " ".join(f"{v:.1f}" for v in n["colour"]) +
+                             f" dB sweep {_fmt(n['sweep'], 'oct')}, level {_fmt(n['level'], 'dB')}")
+            else:
+                parts.append(f"noise {_fmt(n['hz'], 'Hz')} width {_fmt(n['width'], 'oct')} sweep {_fmt(n['sweep'], 'oct')} "
+                             f"tilt {_fmt(n.get('tilt', 0.0), 'dB/oct')}, level {_fmt(n['level'], 'dB')}")
+        v = e["env"]
+        if v.get("points"):
+            envtxt = "envelope " + " ".join(f"{a:.1f}/{b:.1f}" for a, b in v["points"]) + " ms/dB"
+        else:
+            envtxt = f"attack {_fmt(v['attack'], 'ms')} hold {_fmt(v['hold'], 'ms')} decay {_fmt(v['decay'], 'ms')}"
+        lines.append(f"At {e['t']:.4f} s: " + "; ".join(parts) + f"; {envtxt}.")
+    return "\n".join(lines)
+
+
+_NUM = r"(-?\d+(?:\.\d+)?)"
+
+
+def _hz(num, unit):
+    return float(num) * (1000.0 if unit == "kHz" else 1.0)
+
+
+def from_text(text: str) -> dict:
+    """Parse to_text output back to a brief (exact to the printed precision). Raises on a line it cannot read."""
+    rows = [r.strip() for r in text.strip().splitlines() if r.strip()]
+    m = re.match(rf"(.+), {_NUM} s, seed (\d+)\.$", rows[0])
+    if not m:
+        raise ValueError(f"header not understood: {rows[0]!r}")
+    brief = {"name": m.group(1), "seconds": float(m.group(2)), "seed": int(m.group(3)), "events": []}
+    for r in rows[1:]:
+        m = re.match(rf"At {_NUM} s: (.*)\.$", r)
+        if not m:
+            raise ValueError(f"event line not understood: {r!r}")
+        e = {"t": float(m.group(1)), "env": {}}
+        body = m.group(2)
+        mt = re.search(rf"tone {_NUM} (k?Hz) glide {_NUM} st, (\d+) harmonics tilt {_NUM} dB/oct stretch {_NUM}, level {_NUM} dB", body)
+        if mt:
+            e["tone"] = {"hz": _hz(mt.group(1), mt.group(2)), "glide": float(mt.group(3)), "harmonics": float(mt.group(4)),
+                         "tilt": float(mt.group(5)), "stretch": float(mt.group(6)), "level": float(mt.group(7))}
+        mq = re.search(rf"tone {_NUM} (k?Hz) glide {_NUM} st, partials ((?:\d+/-?\d+(?:\.\d+)? ?)+), level {_NUM} dB", body)
+        if mq:
+            mt = mq
+            e["tone"] = {"hz": _hz(mq.group(1), mq.group(2)), "glide": float(mq.group(3)), "harmonics": 1.0, "tilt": 0.0,
+                         "stretch": 0.0, "level": float(mq.group(5)),
+                         "partials": [[int(a), float(b)] for a, b in (p.split("/") for p in mq.group(4).split())]}
+        mn = re.search(rf"noise {_NUM} (k?Hz) width {_NUM} oct sweep {_NUM} oct tilt {_NUM} dB/oct, level {_NUM} dB", body)
+        if mn:
+            e["noise"] = {"hz": _hz(mn.group(1), mn.group(2)), "width": float(mn.group(3)), "sweep": float(mn.group(4)),
+                          "tilt": float(mn.group(5)), "level": float(mn.group(6))}
+        mc = re.search(rf"noise colour ((?:-?\d+(?:\.\d+)? ){{{len(OCTAVES)}}})dB sweep {_NUM} oct, level {_NUM} dB", body)
+        if mc:
+            mn = mc
+            e["noise"] = {"colour": [float(v) for v in mc.group(1).split()], "sweep": float(mc.group(2)),
+                          "level": float(mc.group(3)), "hz": 1000.0, "width": 3.0, "tilt": 0.0}
+        me = re.search(rf"attack {_NUM} ms hold {_NUM} ms decay {_NUM} ms", body)
+        mp = re.search(r"envelope ((?:-?\d+(?:\.\d+)?/-?\d+(?:\.\d+)? ?)+) ms/dB", body)
+        if mp and not me:
+            me = mp
+        # Strict: every clause of the line must be understood, nothing may be silently dropped.
+        clauses = [c.strip() for c in body.split(";")]
+        known = [bool(re.fullmatch(r"tone .*", c) and mt) or bool(re.fullmatch(r"noise .*", c) and mn) or
+                 bool(re.fullmatch(r"(attack|envelope) .*", c) and me) for c in clauses]
+        if not me or not (mt or mn) or not all(known) or len(clauses) != bool(mt) + bool(mn) + 1:
+            raise ValueError(f"event body not understood: {body!r}")
+        if me.re.pattern.startswith("envelope"):
+            pts = [tuple(map(float, p.split("/"))) for p in me.group(1).split()]
+            e["env"] = {"attack": 3.0, "hold": 0.0, "decay": 300.0, "points": [list(p) for p in pts]}
+        else:
+            e["env"] = {"attack": float(me.group(1)), "hold": float(me.group(2)), "decay": float(me.group(3))}
+        brief["events"].append(e)
+    return brief
+
+
+# ---------------------------------------------------------------- compile to a recipe
+def _env_points(t0, env, seconds, steps=6):
+    """Breakpoints (s, dB) of attack (from -60 dB), hold at 0, then a straight-in-dB fall of 60 dB over `decay`."""
+    if env.get("points"):
+        ts = [t0 + p[0] / 1000 for p in env["points"]]
+        out_t, out_d = [], []
+        for tt, dd in zip(ts, [p[1] for p in env["points"]]):
+            if out_t and tt <= out_t[-1]:
+                tt = out_t[-1] + 1e-4
+            out_t.append(min(tt, seconds)); out_d.append(dd)
+        return out_t, out_d
+    a, h, d = env["attack"] / 1000, env["hold"] / 1000, env["decay"] / 1000
+    ts = [t0, t0 + a, t0 + a + h, t0 + a + h + d]
+    db = [-60.0, 0.0, 0.0, -60.0]
+    out_t, out_d = [], []
+    for tt, dd in zip(ts, db):
+        if out_t and tt <= out_t[-1]:
+            tt = out_t[-1] + 1e-4
+        out_t.append(min(tt, seconds)); out_d.append(dd)
+    return out_t, out_d
+
+
+def compile_recipe(brief: dict, bands: int = 24, lo: float = 30.0, hi: float = 20000.0) -> dict:
+    from .render import band_centres
+    seconds = brief["seconds"]
+    tracks, noise_layers = [], []
+    for e in brief["events"]:
+        et, ed = _env_points(e["t"], e["env"], seconds)
+        if "tone" in e:
+            t = e["tone"]
+            members = t["partials"] if t.get("partials") else [[k, t["tilt"] * math.log2(k)] for k in range(1, int(round(t["harmonics"])) + 1)]
+            for k, rel in members:
+                f = t["hz"] * k * math.sqrt(1 + t["stretch"] * k * k)
+                if f * 2 ** (max(t["glide"], 0) / 12) > 20000:
+                    break
+                lv = t["level"] + rel
+                if lv < -90:
+                    continue
+                span = max(et[-1] - et[0], 1e-3)
+                hz = [f * 2 ** (t["glide"] / 12 * (tt - et[0]) / span) for tt in et]
+                tracks.append({"t": [round(v, 5) for v in et], "hz": [round(v, 3) for v in hz],
+                               "db": [round(lv + d, 3) for d in ed]})
+        if "noise" in e:
+            n = e["noise"]
+            c = np.log2(band_centres(lo, hi, bands))
+            span = max(et[-1] - et[0], 1e-3)
+            grid = []
+            for tt, dd in zip(et, ed):
+                centre = math.log2(n["hz"]) + n["sweep"] * (tt - et[0]) / span
+                if "colour" in n:
+                    shift = n["sweep"] * (tt - et[0]) / span
+                    shape = np.interp(c - shift, np.log2(OCTAVES), n["colour"], left=n["colour"][0] - 12, right=n["colour"][-1] - 12)
+                else:
+                    shape = -12.0 * ((c - centre) / max(n["width"] / 2, 0.05)) ** 2  # -12 dB at the half width
+                    shape = shape + n.get("tilt", 0.0) * (c - centre)
+                grid.append(n["level"] + dd + np.maximum(shape, -100))
+            # A noise level is a band power per STFT bin of 1024 (the same unit as the analysed grids).
+            noise_layers.append({"type": "noise", "name": "event", "lo": lo, "hi": hi, "nFft": 1024, "hop": 128,
+                                 "times": [round(v, 5) for v in et],
+                                 "grid": np.round(np.array(grid).T + NOISE_REF_DB, 2).tolist()})
+    layers = noise_layers + ([{"type": "partials", "name": "tones", "tracks": tracks}] if tracks else [])
+    return {"name": brief.get("name", "sfx"), "seconds": seconds, "seed": brief.get("seed", 0), "gainDb": 0.0,
+            "layers": layers}
+
+
+# 0 dB noise level = a band power that sounds about as loud as a 0 dB (full scale) sine: 20 log10(sum(hann)/2) dB.
+NOISE_REF_DB = 20 * math.log10(np.hanning(1024).sum() / 2)
+
+
+def render(brief: dict, sr: int = 48000, seed: int | None = None) -> np.ndarray:
+    from .render import render as _render
+    return _render(compile_recipe(brief), sr, seed)
+
+
+def count(brief: dict) -> int:
+    n = 1
+    for e in brief["events"]:
+        nz = (len(OCTAVES) + 2 if "colour" in e.get("noise", {}) else len(NOISE)) if "noise" in e else 0
+        ne = 2 * len(e["env"]["points"]) if e["env"].get("points") else len(ENV)
+        nt = (3 + 2 * len(e["tone"]["partials"]) if e["tone"].get("partials") else len(TONE)) if "tone" in e else 0
+        n += 1 + ne + nt + nz
+    return n

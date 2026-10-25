@@ -1,0 +1,161 @@
+# 25 October 2026 22:15: text -> sound without any reference. Words of a description select a scene (ordered
+# archetypes with start times) or, failing that, the archetypes they name in text order; macros (pitch, time,
+# weight, brightness, space, gain, take) shape the result; three macro presets give the three proposals.
+# FR : du texte au son sans référence, scènes, archétypes, macros et trois propositions.
+from __future__ import annotations
+
+import copy
+import json
+import math
+import unicodedata
+from pathlib import Path
+
+import numpy as np
+
+from . import brief as B
+
+PARAMS = Path(__file__).resolve().parents[1] / "params"
+
+
+def _load(name):
+    return json.loads((PARAMS / name).read_text())
+
+
+def _norm(s):
+    return "".join(c for c in unicodedata.normalize("NFD", s.lower()) if unicodedata.category(c) != "Mn")
+
+
+def _arch_events(name, t0):
+    a = _load("archetypes.json")[name]
+    out = []
+    for e in a["events"]:
+        ev = B.event(t0 + e["t"], tone=copy.deepcopy(e.get("tone")), noise=copy.deepcopy(e.get("noise")), env=copy.deepcopy(e["env"]))
+        ev["source"] = name
+        out.append(ev)
+    return out
+
+
+def describe_to_brief(text: str, name: str = "sfx") -> dict:
+    t = _norm(text)
+    scenes, arch = _load("scenes.json"), _load("archetypes.json")
+    steps = None
+    for sname, sc in scenes.items():
+        if sname.startswith("_"):
+            continue
+        if any(_norm(w) in t for w in sc["words"]):
+            steps = sc["steps"]; break
+    if steps is None:
+        hits = []
+        for aname, a in arch.items():
+            if aname.startswith("_"):
+                continue
+            pos = [t.find(_norm(w)) for w in a["words"] if _norm(w) in t]
+            if pos:
+                hits.append((min(pos), aname))
+        hits.sort()
+        steps, cursor = [], 0.0
+        for _, aname in hits:
+            steps.append([aname, cursor]); cursor += 0.18
+    if not steps:
+        raise ValueError("no known sound word in the description; add words to params/archetypes.json or scenes.json")
+    events = []
+    for aname, t0 in steps:
+        events += _arch_events(aname, t0)
+    end = max(e["t"] + max(p[0] for p in e["env"]["points"]) / 1000 for e in events)
+    return {"name": name, "seconds": round(end + 0.15, 3), "seed": 0, "events": events}
+
+
+def apply_macros(brief: dict, m: dict) -> dict:
+    """Macros are a layer ON TOP of a brief: the brief text stays the source, the macros are its knobs."""
+    cfg = _load("macros.json")["macros"]
+    v = {k: m.get(k, c["default"]) for k, c in cfg.items()}
+    b = copy.deepcopy(brief)
+    pitch = v["pitch"] - 7.0 * v["weight"]
+    tscale = v["time"] * 2 ** (0.6 * max(v["weight"], 0) - 0.3 * max(-v["weight"], 0))
+    for e in b["events"]:
+        e["t"] *= v["time"]
+        pts = e["env"].get("points")
+        if pts:
+            e["env"]["points"] = [[p[0] * tscale, p[1]] for p in pts]
+        else:
+            for k in ("attack", "hold", "decay"):
+                e["env"][k] *= tscale
+        if "tone" in e:
+            tn = e["tone"]
+            tn["hz"] = float(np.clip(tn["hz"] * 2 ** (pitch / 12), 20, 18000))
+            if tn.get("partials"):
+                tn["partials"] = [[k, r + 3.0 * v["bright"] * math.log2(k)] for k, r in tn["partials"]]
+            else:
+                tn["tilt"] += 3.0 * v["bright"]
+            tn["level"] += v["gain"]
+        if "noise" in e:
+            n = e["noise"]
+            if "colour" in n:
+                oct_ = np.arange(len(B.OCTAVES))
+                col = np.interp(oct_ - pitch / 12, oct_, n["colour"])
+                col = col + v["bright"] * 2.0 * (oct_ - 5) + max(v["weight"], 0) * 4.0 * (oct_ < 3)
+                n["colour"] = [float(c) for c in col - col.max()]
+            else:
+                n["hz"] *= 2 ** (pitch / 12); n["tilt"] = n.get("tilt", 0) + 2.0 * v["bright"]
+            n["level"] += v["gain"]
+    b["seconds"] = round(b["seconds"] * tscale + 1.6 * v["space"], 3)
+    b["seed"] = int(v["seed"])
+    b["space"] = float(v["space"])
+    return b
+
+
+def proposals(brief: dict) -> list[dict]:
+    out = []
+    for p in _load("macros.json")["proposals"]:
+        out.append({"name": p["name"], "macros": p["macros"], "brief": apply_macros(brief, p["macros"])})
+    return out
+
+
+def render(brief: dict, sr: int = 48000) -> np.ndarray:
+    return render_any(brief, sr)
+
+
+def apply_macros_recipe(recipe: dict, m: dict) -> dict:
+    """The same macro panel on a detailed recipe: pitch and weight scale partial frequencies and slide the noise
+    grid along its bands, time scales every time, brightness tilts grid and partials, gain and take as for briefs."""
+    cfg = _load("macros.json")["macros"]
+    v = {k: m.get(k, c["default"]) for k, c in cfg.items()}
+    r = copy.deepcopy(recipe)
+    pitch = v["pitch"] - 7.0 * v["weight"]
+    ts = v["time"] * 2 ** (0.6 * max(v["weight"], 0) - 0.3 * max(-v["weight"], 0))
+    for l in r["layers"]:
+        if l["type"] == "noise":
+            g = np.asarray(l["grid"], float)
+            from .render import band_centres
+            c = np.log2(band_centres(l["lo"], l["hi"], g.shape[0]))
+            g = np.stack([np.interp(c - pitch / 12, c, col) for col in g.T]).T
+            g = g + v["bright"] * 2.0 * (c - c.mean())[:, None] + v["gain"]
+            l["grid"] = g.tolist(); l["times"] = [t * ts for t in l["times"]]
+            if l.get("env"):
+                l["env"]["t"] = [t * ts for t in l["env"]["t"]]
+        elif l["type"] == "partials":
+            for tr in l["tracks"]:
+                tr["t"] = [t * ts for t in tr["t"]]
+                tr["hz"] = [float(np.clip(h * 2 ** (pitch / 12), 20, 20000)) for h in tr["hz"]]
+                tr["db"] = [d + v["gain"] + v["bright"] * 2.0 * (math.log2(np.mean(tr["hz"]) / 1000)) for d in tr["db"]]
+    if r.get("env"):
+        r["env"]["t"] = [t * ts for t in r["env"]["t"]]
+    r["seconds"] = round(r["seconds"] * ts + 1.6 * v["space"], 4)
+    r["seed"] = int(v["seed"]); r["space"] = float(v["space"])
+    return r
+
+
+def render_any(obj: dict, sr: int = 48000) -> np.ndarray:
+    """A brief (has 'events') or a recipe (has 'layers'), with the room tail of its 'space'."""
+    from .render import render as render_recipe
+    y = B.render(obj, sr) if "events" in obj else render_recipe(obj, sr)
+    s = obj.get("space", 0.0)
+    if s > 0:
+        rng = np.random.default_rng(1234)
+        n = int(sr * (0.3 + 2.2 * s)); tt = np.arange(n) / sr
+        ir = np.convolve(rng.standard_normal(n) * np.exp(-tt * 6.9 / (0.3 + 2.2 * s)), np.ones(6) / 6, "same")
+        wet = np.convolve(y, ir)[:len(y)]
+        wet *= np.sqrt(np.sum(y ** 2) / max(np.sum(wet ** 2), 1e-20)) * 10 ** ((-14 + 8 * s) / 20)
+        y = y + wet
+    peak = np.abs(y).max()
+    return y / peak * 10 ** (-1 / 20) if peak > 10 ** (-1 / 20) else y

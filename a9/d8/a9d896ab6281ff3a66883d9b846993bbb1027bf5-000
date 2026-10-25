@@ -1,0 +1,162 @@
+{
+  "_doc": "25 October 2026: the semantic editing interface (HDA third storey). decompose: how a recipe is split into components; sliders: the panel of every component (default = exact identity); naming: rules that name a component from its descriptors; perception: words for a move measured in JND. FR : interface de l'édition sémantique, seule source de ses valeurs.",
+  "decompose": {
+    "components": 4,
+    "loHz": 30,
+    "bands": 64,
+    "iters": 300,
+    "seed": 0,
+    "smoothFrames": 5,
+    "method": "layers"
+  },
+  "sliders": {
+    "levelDb": {
+      "label": "Niveau",
+      "unit": "dB",
+      "min": -24,
+      "max": 12,
+      "default": 0,
+      "step": 0.5,
+      "help": "plus fort ou plus discret"
+    },
+    "pitchSt": {
+      "label": "Hauteur",
+      "unit": "demi-tons",
+      "min": -12,
+      "max": 12,
+      "default": 0,
+      "step": 0.25,
+      "help": "transpose ce composant seul"
+    },
+    "attack": {
+      "label": "Attaque",
+      "unit": "x",
+      "min": 0.25,
+      "max": 4,
+      "default": 1,
+      "step": 0.05,
+      "help": "sous 1 plus sèche, au-dessus plus douce"
+    },
+    "tail": {
+      "label": "Queue",
+      "unit": "x",
+      "min": 0.25,
+      "max": 4,
+      "default": 1,
+      "step": 0.05,
+      "help": "longueur de la chute"
+    },
+    "bright": {
+      "label": "Brillance",
+      "unit": "dB/oct",
+      "min": -6,
+      "max": 6,
+      "default": 0,
+      "step": 0.25,
+      "help": "penche vers les aigus ou les graves"
+    },
+    "material": {
+      "label": "Matière",
+      "unit": "bois / métal",
+      "min": -1,
+      "max": 1,
+      "default": 0,
+      "step": 0.05,
+      "help": "bois : plus mat, court, serré ; métal : plus brillant, long, partiels écartés",
+      "pitchSt": 1.0,
+      "brightDbOct": 2.0,
+      "tailLog2": 1.0,
+      "stretch": 0.06
+    },
+    "shiftMs": {
+      "label": "Moment",
+      "unit": "ms",
+      "min": -200,
+      "max": 200,
+      "default": 0,
+      "step": 1,
+      "help": "avance ou retarde ce composant"
+    },
+    "mute": {
+      "label": "Couper",
+      "unit": "",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "step": 1,
+      "help": "retire ce composant"
+    }
+  },
+  "naming": {
+    "registers": [
+      {
+        "name": "grave",
+        "belowHz": 400
+      },
+      {
+        "name": "médium",
+        "belowHz": 2500
+      },
+      {
+        "name": "aigu",
+        "belowHz": 1000000000.0
+      }
+    ],
+    "kinds": {
+      "click": "Clic",
+      "tone": "Ton",
+      "swell": "Montée",
+      "tail": "Queue",
+      "hit": "Choc"
+    },
+    "clickMaxMs": 60,
+    "clickAttackMs": 10,
+    "tonalShare": 0.45,
+    "swellAttackMs": 120,
+    "tailMinMs": 400,
+    "layers": {
+      "attack": "Attaque",
+      "low": "Corps grave",
+      "air": "Souffle",
+      "airLong": "Queue de souffle",
+      "tone": "Ton",
+      "glide": "Glissando"
+    },
+    "glideSt": 1.0
+  },
+  "perception": [
+    {
+      "belowDb": 1,
+      "word": "imperceptible"
+    },
+    {
+      "belowDb": 3,
+      "word": "subtil"
+    },
+    {
+      "belowDb": 1000000000.0,
+      "word": "franc"
+    }
+  ],
+  "layers": {
+    "_doc": "26 October 2026: sound design layers (attack, low body, air, tones).",
+    "onsetRangeDb": 40,
+    "onsetMinRiseDb": 3,
+    "maxOnsets": 4,
+    "minGapMs": 60,
+    "attackMs": 25,
+    "attackFadeMs": 20,
+    "lowHz": 220,
+    "groupMs": 40,
+    "maxTones": 4,
+    "minShare": 0.002,
+    "lineGapMs": 15,
+    "lineCents": 40
+  },
+  "audibility": {
+    "_doc": "26 October 2026: cells that count when measuring how audible an edit is (masking and hearing threshold).",
+    "rangeDb": 40,
+    "minHz": 40,
+    "seeds": 4
+  }
+}

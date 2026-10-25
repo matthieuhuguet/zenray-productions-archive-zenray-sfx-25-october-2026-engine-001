@@ -1,0 +1,475 @@
+# 25 October 2026 23:59: SEMANTIC EDITING. The third storey above parametric (the recipe's raw numbers) and procedural
+# (the renderer): a reproduced sound is split into a few NAMED components (click, ring, thump, tail...), each with a
+# short panel of sliders that mean something to the ear. One slider drives hundreds of raw numbers coherently.
+#
+# Exactness: the noise of every component is cut from the SAME noise draw by amplitude masks that sum to one, and the
+# partials are shared out, so with every slider at its default the sum of the components IS the recipe's render
+# (checked by Scripts/CheckSemantic.py). Every move is measured against the untouched sound in JND units.
+# FR : édition sémantique. Composants nommés, curseurs qui ont un sens, identité exacte aux valeurs par défaut.
+from __future__ import annotations
+
+import copy
+import json
+import math
+from pathlib import Path
+
+import numpy as np
+
+from .render import band_centres, grid_to_bins, istft, render_partials, stft
+
+PARAMS = Path(__file__).resolve().parents[1] / "params" / "semantic.json"
+
+
+def cfg() -> dict:
+    return json.loads(PARAMS.read_text())
+
+
+# ------------------------------------------------------------------ decomposition
+def _nmf(V, k, iters, seed, smooth):
+    rng = np.random.default_rng(seed)
+    W = rng.random((V.shape[0], k)) + 0.1
+    H = rng.random((k, V.shape[1])) + 0.1
+    from scipy.ndimage import uniform_filter1d
+    for it in range(iters):
+        H *= (W.T @ V) / (W.T @ W @ H + 1e-30)
+        if smooth > 1 and it % 10 == 0:  # temporal continuity: a component is an event, not a flicker
+            H = uniform_filter1d(H, smooth, axis=1, mode="nearest")
+        W *= (V @ H.T) / (W @ H @ H.T + 1e-30)
+    return W, H
+
+
+def _noise_scale(recipe, n, sr):
+    """Amplitude scale map (bins x frames) of the noise layer, exactly as render_noise builds it."""
+    lay = next(l for l in recipe["layers"] if l["type"] == "noise")
+    n_fft, hop = lay.get("nFft", 1024), lay.get("hop", 128)
+    frames = 1 + (n + n_fft // 2 + n_fft - n_fft) // hop
+    gdb = grid_to_bins(np.asarray(lay["grid"], float), np.asarray(lay["times"], float), lay["lo"], lay["hi"], n_fft, hop, frames, sr)
+    return lay, 10 ** (gdb / 20.0) / np.sqrt(np.sum(np.hanning(n_fft) ** 2)) * 10 ** (lay.get("gainDb", 0.0) / 20.0)
+
+
+def decompose(recipe: dict, sr: int = 48000, k: int | None = None) -> dict:
+    """Recipe -> semantic model: K components, each with an amplitude mask on the noise STFT (masks sum to one), a
+    list of partial tracks, descriptors and a name. Nothing of the recipe is changed."""
+    c = cfg()["decompose"]
+    k = k or c["components"]
+    n = int(round(recipe["seconds"] * sr))
+    lay, S = _noise_scale(recipe, n, sr)
+    n_fft, hop = lay.get("nFft", 1024), lay.get("hop", 128)
+    part = next((l for l in recipe["layers"] if l["type"] == "partials"), {"tracks": []})
+    # Total expected power on the noise STFT grid: noise power + each partial's power (rendered alone).
+    P_noise = (S ** 2) * np.sum(np.hanning(n_fft) ** 2)
+    track_pow = []
+    for tr in part["tracks"]:
+        y = render_partials({"tracks": [tr]}, n, sr)
+        track_pow.append(np.abs(stft(y, n_fft, hop)) ** 2)
+    P = P_noise + (sum(track_pow) if track_pow else 0)
+    # Factorise a coarse, perceptual view (log-spaced 64 bands), then lift the activations back to every bin.
+    f = np.fft.rfftfreq(n_fft, 1 / sr)
+    edges = np.geomspace(c["loHz"], sr / 2, c["bands"] + 1)
+    band_of = np.clip(np.searchsorted(edges, f) - 1, 0, c["bands"] - 1)
+    B = np.zeros((c["bands"], len(f))); B[band_of, np.arange(len(f))] = 1
+    Vb = B @ P
+    W, H = _nmf(Vb, k, c["iters"], c["seed"], c["smoothFrames"])
+    comp = np.stack([np.outer(W[band_of, i], H[i]) for i in range(k)])  # (k, bins, frames)
+    tot = comp.sum(0) + 1e-30
+    masks = comp / tot  # amplitude masks, sum exactly 1 everywhere (Wiener-like share)
+    # Partials: each track goes to the component that owns most of its energy.
+    owner = []
+    for tp in track_pow:
+        share = [(tp * masks[i]).sum() for i in range(k)]
+        owner.append(int(np.argmax(share)))
+    comps = []
+    for i in range(k):
+        e_noise = float((P_noise * masks[i] ** 2).sum())
+        e_tone = float(sum(tp.sum() for tp, o in zip(track_pow, owner) if o == i))
+        pw = (P_noise * masks[i] ** 2).sum(0) + sum((tp.sum(0) for tp, o in zip(track_pow, owner) if o == i), np.zeros(P.shape[1]))
+        spec = (P_noise * masks[i] ** 2).sum(1) + sum((tp.sum(1) for tp, o in zip(track_pow, owner) if o == i), np.zeros(P.shape[0]))
+        comps.append({"index": i, "tracks": [j for j, o in enumerate(owner) if o == i],
+                      "desc": describe(pw, spec, f, hop / sr, e_tone / max(e_noise + e_tone, 1e-30), e_noise + e_tone)})
+    total = sum(cp["desc"]["energy"] for cp in comps)
+    for cp in comps:
+        cp["desc"]["share"] = round(cp["desc"]["energy"] / max(total, 1e-30), 4)
+    comps.sort(key=lambda cp: cp["desc"]["peakS"])
+    order = [cp["index"] for cp in comps]
+    names = name_components([cp["desc"] for cp in comps])
+    for cp, nm in zip(comps, names):
+        cp["name"] = nm
+    return {"recipe": recipe, "sr": sr, "n": n, "masks": masks[order], "components": comps, "nFft": n_fft, "hop": hop}
+
+
+def describe(pw, spec, f, hop_s, tonal, energy):
+    db = 10 * np.log10(pw + 1e-30); db -= db.max()
+    k = int(np.argmax(db))
+    on = np.nonzero(db > -20)[0]
+    start = on[0] if on.size else k
+    after = np.nonzero((np.arange(len(db)) > k) & (db < -30))[0]
+    end = after[0] if after.size else len(db) - 1
+    centroid = float((spec * f).sum() / max(spec.sum(), 1e-30))
+    return {"peakS": round(k * hop_s, 4), "attackMs": round((k - start) * hop_s * 1000, 1), "decayMs": round((end - k) * hop_s * 1000, 1),
+            "centroidHz": round(centroid, 1), "tonal": round(float(tonal), 3), "energy": float(energy)}
+
+
+def name_components(descs):
+    """Names from descriptors (rules in params/semantic.json): register + kind, unique, in French for the app."""
+    c = cfg()["naming"]
+    out = []
+    for d in descs:
+        reg = next(r["name"] for r in c["registers"] if d["centroidHz"] < r["belowHz"])
+        if d["decayMs"] <= c["clickMaxMs"] and d["attackMs"] <= c["clickAttackMs"]:
+            kind = c["kinds"]["click"]
+        elif d["tonal"] >= c["tonalShare"]:
+            kind = c["kinds"]["tone"]
+        elif d["attackMs"] >= c["swellAttackMs"]:
+            kind = c["kinds"]["swell"]
+        elif d["decayMs"] >= c["tailMinMs"]:
+            kind = c["kinds"]["tail"]
+        else:
+            kind = c["kinds"]["hit"]
+        out.append(f"{kind} {reg}")
+    seen = {}
+    final = []
+    for nm in out:
+        seen[nm] = seen.get(nm, 0) + 1
+        final.append(nm if out.count(nm) == 1 else f"{nm} {seen[nm]}")
+    return final
+
+
+# ------------------------------------------------------------------ editing
+def defaults() -> dict:
+    return {k: v["default"] for k, v in cfg()["sliders"].items()}
+
+
+def _warp_src(t, tp, shift, attack, tail):
+    """Output time -> source time for one component: shifted, attack durations x attack, tail durations x tail."""
+    u = t - shift
+    return np.where(u < tp, tp - (tp - u) / attack, tp + (u - tp) / tail)
+
+
+def _warp_fwd(t, tp, shift, attack, tail):
+    t = np.asarray(t, float)
+    return shift + np.where(t < tp, tp - (tp - t) * attack, tp + (t - tp) * tail)
+
+
+def render(model: dict, edits: dict | None = None, seed: int | None = None) -> np.ndarray:
+    """Sum of the components, each edited by its own sliders. edits = {component index: {slider: value}}."""
+    r, sr, n = model["recipe"], model["sr"], model["n"]
+    sc = cfg()["sliders"]
+    E = {cp["index"]: {**defaults(), **(edits or {}).get(str(cp["index"]), (edits or {}).get(cp["index"], {}))} for cp in model["components"]}
+    # Output length grows with timing and tail moves.
+    extra = 0.0
+    for cp in model["components"]:
+        e = E[cp["index"]]; tp = cp["desc"]["peakS"]
+        extra = max(extra, (r["seconds"] - tp) * (e["tail"] - 1) + e["shiftMs"] / 1000)
+    n_out = n + max(0, int(round(extra * sr)))
+    s = r.get("seed", 0) if seed is None else seed
+    lay, S = _noise_scale(r, n, sr)
+    li = r["layers"].index(lay)
+    n_fft, hop = model["nFft"], model["hop"]
+    X = stft(np.random.default_rng(s * 1009 + li).standard_normal(n_out), n_fft, hop)
+    f = np.fft.rfftfreq(n_fft, 1 / sr)
+    lf = np.log2(np.maximum(f, 1.0))
+    frames_src = S.shape[1]
+    t_frames = np.arange(X.shape[1]) * hop / sr
+    t_samp = np.arange(n_out) / sr
+    part = next((l for l in r["layers"] if l["type"] == "partials"), {"tracks": [], "gainDb": 0.0})
+    y = np.zeros(n_out)
+    for ci, cp in enumerate(model["components"]):
+        e = E[cp["index"]]
+        if e["mute"] >= 0.5:
+            continue
+        tp, shift = cp["desc"]["peakS"], e["shiftMs"] / 1000
+        attack, tail = e["attack"], e["tail"]
+        pitch = e["pitchSt"] + e["material"] * sc["material"]["pitchSt"]
+        bright = e["bright"] + e["material"] * sc["material"]["brightDbOct"]
+        tail = tail * 2 ** (e["material"] * sc["material"]["tailLog2"])
+        gain = 10 ** (e["levelDb"] / 20)
+        identity = all(abs(e[k] - sc[k]["default"]) < 1e-12 for k in sc)
+        # ---- noise part: this component's share of the scale map, edited in time and frequency
+        M = model["masks"][ci] * S
+        if not identity:
+            src = _warp_src(t_frames, tp, shift, attack, tail) / (hop / sr)
+            j0 = np.clip(np.floor(src).astype(int), 0, frames_src - 1); j1 = np.clip(j0 + 1, 0, frames_src - 1)
+            w = np.clip(src - np.floor(src), 0, 1)
+            M = M[:, j0] * (1 - w) + M[:, j1] * w
+            M[:, (src < -0.5) | (src > frames_src - 0.5)] = 0.0
+            if pitch:
+                src_lf = lf - pitch / 12.0
+                M = np.stack([np.interp(src_lf, lf, M[:, j], left=0, right=0) for j in range(M.shape[1])], 1)
+            if bright:
+                M = M * 10 ** (bright * (lf - 10.0) / 20.0)[:, None]
+        else:
+            M = np.pad(M, ((0, 0), (0, X.shape[1] - M.shape[1])))[:, :X.shape[1]]
+        yn = istft(X * M, n_fft, hop, n_out)
+        env = lay.get("env")
+        src_t = _warp_src(t_samp, tp, shift, attack, tail) if not identity else t_samp
+        if env:
+            yn = yn * 10 ** (np.interp(src_t, env["t"], env["db"]) / 20.0)
+        # ---- partials owned by this component, moved the same way, phase ANCHORED at the component's peak
+        yp = np.zeros(n_out)
+        inh = e["material"] * sc["material"]["stretch"]
+        ratio = 2 ** (pitch / 12)
+        f0 = min(min(part["tracks"][i]["hz"]) for i in cp["tracks"]) if cp["tracks"] else 100.0
+        g_part = 10 ** (part.get("gainDb", 0.0) / 20.0)
+        for j in cp["tracks"]:
+            tr = part["tracks"][j]
+            if identity:
+                yp += render_partials({"tracks": [tr]}, n_out, sr) * g_part
+                continue
+            yp += _edited_track(tr, n, n_out, sr, tp, shift, attack, tail, ratio, inh, f0, bright) * g_part
+        yc = yn + yp
+        if r.get("env"):
+            yc = yc * 10 ** (np.interp(src_t, r["env"]["t"], r["env"]["db"]) / 20.0)
+        y += gain * yc
+    return y * 10 ** (r.get("gainDb", 0.0) / 20.0)
+
+
+def _edited_track(tr, n_src, n_out, sr, tp, shift, attack, tail, ratio, inh, f0, bright):
+    """One partial, edited, with its ORIGINAL phase trajectory kept at the component's peak: the edited phase is the
+    original phase at the anchor plus the integral of the edited frequency from there. With every slider at its
+    default this is exactly render_partials; a small move is a small change (no restart of every phase)."""
+    tt = np.asarray(tr["t"], float)
+    lo, hi = int(max(0, tt[0] * sr)), int(min(n_src, tt[-1] * sr + 1))
+    if hi <= lo + 1:
+        return np.zeros(n_out)
+    # Original phase in source time (exactly as render_partials builds it), as a function of the source sample.
+    seg = np.arange(lo, hi) / sr
+    f_src = np.exp(np.interp(seg, tt, np.log(tr["hz"])))
+    ph_src = 2 * np.pi * np.cumsum(f_src) / sr + tr.get("phase", 0.0)
+    # Output samples covered: the forward image of the track span.
+    o0, o1 = _warp_fwd([tt[0], tt[-1]], tp, shift, attack, tail)
+    a, b = int(max(0, np.floor(o0 * sr))), int(min(n_out, np.ceil(o1 * sr) + 1))
+    if b <= a + 1:
+        return np.zeros(n_out)
+    t_out = np.arange(a, b) / sr
+    s_src = _warp_src(t_out, tp, shift, attack, tail)
+    # Mirror render_partials sample for sample: position in source samples from `lo`, fade over 2 ms of samples.
+    pos = s_src * sr - lo
+    m = hi - lo
+    inside = (pos >= -1e-6) & (pos <= m - 1 + 1e-6)
+    f_new = np.exp(np.interp(s_src, tt, np.log(tr["hz"])))
+    f_new = f0 * (f_new / f0) ** (1 + inh) * ratio
+    db = np.interp(s_src, tt, tr["db"]) + bright * np.log2(np.maximum(f_new, 20) / 1000)
+    amp = 10 ** (db / 20) * inside
+    fade = np.minimum(1.0, np.minimum(pos, m - 1 - pos) / (0.002 * sr))
+    amp *= np.clip(fade, 0, 1)
+    # Anchor: the output sample whose source time is nearest the peak (or the track start if the peak is outside).
+    s_anchor = float(np.clip(tp, lo / sr, (hi - 1) / sr))  # inside the sampled span, so the phase is read, not clamped
+    k = int(np.argmin(np.abs(s_src - s_anchor)))
+    ph_anchor = np.interp(s_src[k], seg, ph_src)
+    cum = 2 * np.pi * np.cumsum(f_new) / sr
+    ph = ph_anchor + (cum - cum[k])
+    y = np.zeros(n_out)
+    y[a:b] = amp * np.sin(ph)
+    return y
+
+
+def solo(model, index, edits=None, seed=None):
+    """One component alone (the others muted), edited or not."""
+    ed = copy.deepcopy(edits or {})
+    for cp in model["components"]:
+        if cp["index"] != index:
+            ed.setdefault(str(cp["index"]), {})["mute"] = 1.0
+    return render(model, ed, seed)
+
+
+def distance(model, edits, seed=7):
+    return edit_distance(model, edits, seed)
+
+
+def build(recipe: dict, sr: int = 48000, method: str | None = None) -> dict:
+    """The decomposition chosen in params/semantic.json (decompose.method), or the one named."""
+    m = method or cfg()["decompose"].get("method", "layers")
+    return decompose_layers(recipe, sr) if m == "layers" else decompose(recipe, sr)
+
+
+def summary(model) -> list[dict]:
+    return [{"index": cp["index"], "name": cp["name"], **{k: float(cp["desc"][k]) for k in ("peakS", "attackMs", "decayMs", "centroidHz", "tonal", "share")},
+             "partials": len(cp["tracks"])} for cp in model["components"]]
+
+
+# ------------------------------------------------------------------ 26 October 2026 00:20: layer decomposition
+def _cos_ramp(x, a, b):
+    """0 below a, 1 above b, raised cosine between."""
+    return 0.5 - 0.5 * np.cos(np.pi * np.clip((x - a) / max(b - a, 1e-9), 0, 1))
+
+
+def decompose_layers(recipe: dict, sr: int = 48000) -> dict:
+    """Sound design layers instead of a factorisation: the noise is cut into ATTACK (a short window after every
+    onset), LOW BODY (under the crossover) and AIR (the rest), by smooth masks that sum to one; the partials are
+    grouped into TONES by start time and harmonic family. Every component therefore has a meaning a sound designer
+    recognises. FR : couches de métier, attaque, corps grave, souffle, tons."""
+    c = cfg()["layers"]
+    n = int(round(recipe["seconds"] * sr))
+    lay, S = _noise_scale(recipe, n, sr)
+    n_fft, hop = lay.get("nFft", 1024), lay.get("hop", 128)
+    part = next((l for l in recipe["layers"] if l["type"] == "partials"), {"tracks": []})
+    f = np.fft.rfftfreq(n_fft, 1 / sr)
+    t = np.arange(S.shape[1]) * hop / sr
+    P_noise = (S ** 2) * np.sum(np.hanning(n_fft) ** 2)
+    tracks = part["tracks"]
+    track_pow = [np.abs(stft(render_partials({"tracks": [tr]}, n, sr), n_fft, hop)) ** 2 for tr in tracks]
+    P = P_noise + (sum(track_pow) if track_pow else 0)
+    # Onsets: strongest rises of the total level (dB flux), at most maxOnsets, at least minGapMs apart.
+    lvl = 10 * np.log10(P.sum(0) + 1e-30)
+    flux = np.maximum(np.diff(lvl, prepend=lvl[0]), 0)
+    flux[lvl < lvl.max() - c["onsetRangeDb"]] = 0
+    onsets = []
+    for j in np.argsort(flux)[::-1]:
+        if flux[j] < c["onsetMinRiseDb"] or len(onsets) >= c["maxOnsets"]:
+            break
+        if all(abs(t[j] - o) * 1000 >= c["minGapMs"] for o in onsets):
+            onsets.append(float(t[j]))
+    onsets = sorted(onsets) or [float(t[int(np.argmax(lvl))])]
+    a = c["attackMs"] / 1000
+    T = np.zeros_like(t)
+    for o in onsets:
+        T = np.maximum(T, _cos_ramp(t, o - 0.004, o) * (1 - _cos_ramp(t, o + a, o + a + c["attackFadeMs"] / 1000)))
+    L = 1 - _cos_ramp(np.log2(np.maximum(f, 1)), np.log2(c["lowHz"]), np.log2(c["lowHz"] * 2))
+    masks = [np.outer(np.ones_like(f), T), np.outer(L, 1 - T), np.outer(1 - L, 1 - T)]
+    kinds = ["attack", "low", "air"]
+    # Lines first: fragments of one spectral line (overlapping or touching in time, same pitch within lineCents) are
+    # one physical partial and must stay in ONE component, or editing one fragment changes its interference with the
+    # other (seen 26 October 2026: a 0.1 ms shift moved a 6 kHz tone by 4 dB). Union-find over tracks.
+    parent = list(range(len(tracks)))
+    def root(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]; i = parent[i]
+        return i
+    mean_c = [1200 * np.log2(np.exp(np.mean(np.log(tr["hz"])))) for tr in tracks]
+    for i in range(len(tracks)):
+        for j in range(i + 1, len(tracks)):
+            ti, tj = tracks[i]["t"], tracks[j]["t"]
+            gap = max(ti[0], tj[0]) - min(ti[-1], tj[-1])
+            if gap * 1000 <= c["lineGapMs"] and abs(mean_c[i] - mean_c[j]) <= c["lineCents"]:
+                parent[root(i)] = root(j)
+    lines = {}
+    for j in range(len(tracks)):
+        lines.setdefault(root(j), []).append(j)
+    # Tones: group lines by start (within groupMs of a group's start) and keep the strongest maxTones groups.
+    groups = []
+    for members in sorted(lines.values(), key=lambda ms: min(tracks[j]["t"][0] for j in ms)):
+        st = min(tracks[j]["t"][0] for j in members)
+        g = next((g for g in groups if abs(g["start"] - st) * 1000 <= c["groupMs"]), None)
+        if g is None:
+            groups.append({"start": st, "tracks": list(members)})
+        else:
+            g["tracks"] += members
+    for g in groups:
+        g["energy"] = float(sum(track_pow[j].sum() for j in g["tracks"]))
+    groups.sort(key=lambda g: -g["energy"])
+    keep, rest = groups[:c["maxTones"]], groups[c["maxTones"]:]
+    for g in rest:  # merge small groups into the kept group nearest in time
+        near = min(keep, key=lambda k: abs(k["start"] - g["start"]))
+        near["tracks"] += g["tracks"]
+    keep.sort(key=lambda g: g["start"])
+    comps, all_masks = [], []
+    zero = np.zeros_like(S)
+    for kind, m in zip(kinds, masks):
+        pw = (P_noise * m ** 2)
+        comps.append({"kind": kind, "tracks": [], "pw": pw})
+        all_masks.append(m)
+    for g in keep:
+        pw = sum(track_pow[j] for j in g["tracks"])
+        hz = [float(np.exp(np.mean(np.log(tracks[j]["hz"])))) for j in g["tracks"]]
+        top = g["tracks"][int(np.argmax([track_pow[j].sum() for j in g["tracks"]]))]
+        hz = [float(np.exp(np.mean(np.log(tracks[top]["hz"]))))]  # label by the loudest partial, not the lowest
+        glide = 12 * math.log2(tracks[top]["hz"][-1] / tracks[top]["hz"][0]) if len(tracks[top]["hz"]) > 1 else 0.0
+        comps.append({"kind": "tone", "tracks": g["tracks"], "pw": pw, "hz": min(hz), "glide": glide})
+        all_masks.append(zero)
+    total = sum(float(cp["pw"].sum()) for cp in comps)
+    out = []
+    for i, cp in enumerate(comps):
+        d = describe(cp["pw"].sum(0), cp["pw"].sum(1), f, hop / sr, 1.0 if cp["kind"] == "tone" else 0.0, float(cp["pw"].sum()))
+        d["share"] = round(d["energy"] / max(total, 1e-30), 4)
+        out.append({"index": i, "tracks": cp["tracks"], "desc": d, "kind": cp["kind"], "hz": cp.get("hz"), "glide": cp.get("glide", 0.0)})
+    names = name_layers(out)
+    for cp, nm in zip(out, names):
+        cp["name"] = nm
+    # Drop empty components (no energy), keep masks aligned with indices.
+    keep_i = [i for i, cp in enumerate(out) if cp["desc"]["share"] > c["minShare"]]
+    dropped = [i for i in range(len(out)) if i not in keep_i]
+    if dropped:  # an empty noise layer gives its mask to the air layer so masks still sum to one
+        for i in dropped:
+            if out[i]["kind"] != "tone":
+                all_masks[2] = all_masks[2] + all_masks[i]
+            else:
+                out[keep_i[0]]["tracks"] += out[i]["tracks"]
+    comps_final = [out[i] for i in keep_i]
+    masks_final = np.stack([all_masks[i] for i in keep_i])
+    for new, cp in enumerate(comps_final):
+        cp["index"] = new
+    return {"recipe": recipe, "sr": sr, "n": n, "masks": masks_final, "components": comps_final, "nFft": n_fft, "hop": hop,
+            "onsets": onsets, "method": "layers"}
+
+
+def name_layers(comps):
+    c = cfg()["naming"]
+    names = []
+    for cp in comps:
+        d = cp["desc"]
+        if cp["kind"] == "attack":
+            names.append(c["layers"]["attack"])
+        elif cp["kind"] == "low":
+            names.append(c["layers"]["low"])
+        elif cp["kind"] == "air":
+            names.append(c["layers"]["airLong"] if d["decayMs"] >= c["tailMinMs"] else c["layers"]["air"])
+        else:
+            hz = cp["hz"]
+            label = f"{hz / 1000:.1f} kHz".replace(".", ",") if hz >= 1000 else f"{hz:.0f} Hz"
+            kind = c["layers"]["glide"] if abs(cp["glide"]) >= c["glideSt"] else c["layers"]["tone"]
+            names.append(f"{kind} {label}, {d['peakS']:.2f} s".replace(".", ","))
+    return names
+
+
+def edit_distance(model, edits, seed=7):
+    """26 October 2026 00:20: LOCAL audibility of an edit: smoothed third-octave levels of the untouched and edited
+    renders (same noise draw), the 95th percentile of the absolute dB difference over audible cells. The ear
+    notices a local change of about 1 dB; the global perceptual loss dilutes a local change over the whole sound.
+    Both are returned. FR : audibilité locale d'une retouche, en dB par tiers d'octave."""
+    from .score import score
+    p = cfg()["perception"]
+    p_db = cfg()["audibility"]
+    # Average power over several noise draws: a tone sharing a cell with another component's noise sums differently
+    # for each draw, so a single draw turns a phase rotation into a fake "level change" (26 October 2026).
+    seeds = [seed + k for k in range(p_db["seeds"])]
+    A = [render(model, {}, sd) for sd in seeds]; Bv = [render(model, edits, sd) for sd in seeds]
+    n = max(len(A[0]), len(Bv[0]))
+    A = [np.pad(v, (0, n - len(v))) for v in A]; Bv = [np.pad(v, (0, n - len(v))) for v in Bv]
+    a, b = A[0], Bv[0]
+    sr = model["sr"]
+    f = np.fft.rfftfreq(2048, 1 / sr)
+    edges = 25 * 2 ** (np.arange(0, 31) / 3)
+    band = np.clip(np.searchsorted(edges, f) - 1, 0, len(edges) - 2)
+    def tob(x):
+        P = np.abs(stft(x, 2048, 256)) ** 2
+        Bp = np.zeros((len(edges) - 1, P.shape[1]))
+        np.add.at(Bp, band, P)
+        from scipy.ndimage import uniform_filter
+        return 10 * np.log10(np.maximum(uniform_filter(Bp, size=(3, 5), mode="nearest"), 0) + 1e-30)
+    def tob_mean(vs):
+        from scipy.ndimage import uniform_filter
+        acc = None
+        for x in vs:
+            P = np.abs(stft(x, 2048, 256)) ** 2
+            Bp = np.zeros((len(edges) - 1, P.shape[1])); np.add.at(Bp, band, P)
+            acc = Bp if acc is None else acc + Bp
+        return 10 * np.log10(np.maximum(uniform_filter(acc / len(vs), size=(3, 5), mode="nearest"), 0) + 1e-30)
+    da, db = tob_mean(A), tob_mean(Bv)
+    top = max(da.max(), db.max())
+    # Floor both at 60 dB under the peak: -150 against -60 dB is a "90 dB change" nobody can hear.
+    da, db = np.maximum(da, top - 60), np.maximum(db, top - 60)
+    # Audible cells only: bands above 40 Hz and within 40 dB of the peak (quieter cells are masked by the loud part
+    # of an effect; seen on Mail Open, 26 October 2026: a 25 Hz band at -59 dB read as a "9 dB" jump).
+    live = (np.maximum(da, db) > top - p_db["rangeDb"]) & (edges[:-1] >= p_db["minHz"])[:, None]
+    # The largest smoothed change where the sound is audible: a short component changes few cells, and a percentile
+    # over the whole sound would call a 6 dB move on it "0 dB" (seen on Cufflinks Open, 26 October 2026).
+    diff = np.abs(da - db)
+    peak = float(diff[live].max()) if live.any() else 0.0
+    # Loudness-weighted mean change: each audible cell weighs its power (the louder of the two), so a change in the
+    # loud body of the sound counts and a partial moved in a quiet corner barely does (26 October 2026: the peak
+    # alone called every frequency move "franc", 40 dB, because a partial leaves one band for another).
+    w = 10 ** (np.maximum(da, db) / 10) * live
+    mean = float((diff * w).sum() / max(w.sum(), 1e-30))
+    word = next(x["word"] for x in p if mean < x["belowDb"])
+    g = score(b, a, sr)
+    return {"localDb": round(mean, 2), "peakDb": round(peak, 2), "word": word, "globalJnd": round(g["invariantE"], 2)}

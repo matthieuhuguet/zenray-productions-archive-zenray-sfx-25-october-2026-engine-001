@@ -1,0 +1,342 @@
+# 25 October 2026 19:25: fit a BRIEF to a reference. Events start at detected onsets; each event's ~15 numbers are
+# fitted by CMA-ES (no gradient, so any judge works), one event at a time with the others fixed, two passes.
+# Objective: the seed-invariant perceptual loss plus a hinge on added energy (excess). Population evaluated on all
+# cores. FR : ajuste un brief à une référence, événement par événement, par CMA-ES sur tous les cœurs.
+from __future__ import annotations
+
+import copy
+import math
+import os
+from concurrent.futures import ProcessPoolExecutor
+
+import numpy as np
+
+from . import brief as B
+
+_REF = None
+
+
+def _init_worker(ref, sr):
+    global _REF
+    from .score import _cfg
+    from zrmd.audio import ploss
+    x = np.asarray(ref, float)
+    _REF = (x, sr, ploss.Target(x.astype(np.float32), sr, "cpu", _cfg(True)))
+
+
+def objective(br: dict) -> float:
+    from .score import _cfg, excess
+    from zrmd.audio import ploss
+    import torch
+    x, sr, tgt = _REF
+    y = B.render(br, sr, seed=0)[:len(x)]
+    y = np.pad(y, (0, len(x) - len(y)))
+    with torch.no_grad():
+        e2, _ = ploss.loss(torch.as_tensor(y.astype(np.float32)), tgt)
+    return float(e2) + (excess(y, x, sr)["excessPct"] / 5.0) ** 2
+
+
+# ---------------------------------------------------------------- vector <-> event
+def _spec(e):
+    s = [("t", None)]
+    if e["env"].get("points"):
+        s += [("point", i) for i in range(len(e["env"]["points"]))]
+    else:
+        s += [("env", k) for k in B.ENV]
+    if "tone" in e:
+        if e["tone"].get("partials"):
+            s += [("tone", "hz"), ("tone", "glide"), ("tone", "level")] + [("partial", i) for i in range(len(e["tone"]["partials"]))]
+        else:
+            s += [("tone", k) for k in B.TONE]
+    if "noise" in e:
+        if "colour" in e["noise"]:
+            s += [("noise", "sweep"), ("noise", "level")] + [("colour", i) for i in range(len(B.OCTAVES))]
+        else:
+            s += [("noise", k) for k in B.NOISE]
+    return s
+
+
+def _bounds(group, key):
+    if group == "partial":
+        return ("dB", -60.0, 0.0, 0.0, "lin")[1:5]
+    if group == "point":
+        return ("dB", -60.0, 0.0, 0.0, "lin")[1:5]
+    if group == "colour":
+        return B.COLOUR[1:5]
+    return {"env": B.ENV, "tone": B.TONE, "noise": B.NOISE}[group][key][1:5]
+
+
+def encode(e, t0):
+    out = []
+    for g, k in _spec(e):
+        if g == "t":
+            out.append(0.5 + (e["t"] - t0) / 0.06)
+            continue
+        lo, hi, _, sc = _bounds(g, k)
+        v = e["noise"]["colour"][k] if g == "colour" else e["env"]["points"][k][1] if g == "point" else e["tone"]["partials"][k][1] if g == "partial" else e[g][k]
+        out.append((math.log(v / lo) / math.log(hi / lo)) if sc == "log" else (v - lo) / (hi - lo))
+    return np.clip(np.array(out), 0.001, 0.999)
+
+
+def decode(u, e, t0):
+    e = copy.deepcopy(e)
+    for (g, k), x in zip(_spec(e), u):
+        if g == "t":
+            e["t"] = max(0.0, t0 + (x - 0.5) * 0.06)
+            continue
+        lo, hi, _, sc = _bounds(g, k)
+        v = lo * (hi / lo) ** x if sc == "log" else lo + x * (hi - lo)
+        if g == "colour":
+            e["noise"]["colour"][k] = v
+        elif g == "point":
+            e["env"]["points"][k][1] = v
+        elif g == "partial":
+            e["tone"]["partials"][k][1] = v
+        else:
+            e[g][k] = round(v) if sc == "int" else v
+    return e
+
+
+# ---------------------------------------------------------------- initial guess from the analysis
+def initial(x: np.ndarray, sr: int, events: int, name: str = "sfx") -> dict:
+    import librosa
+    from .analyze import track_partials
+    on = librosa.onset.onset_detect(y=x.astype(np.float32), sr=sr, hop_length=128, backtrack=True, units="time")
+    env = librosa.feature.rms(y=x.astype(np.float32), frame_length=1024, hop_length=128)[0]
+    strength = [env[min(len(env) - 1, int(t * sr / 128) + 4)] for t in on]
+    keep = sorted(np.argsort(strength)[::-1][:events]) if len(on) else []
+    onsets = [float(on[i]) for i in keep] or [0.0]
+    tracks = track_partials(x, sr, max_tracks=64)
+    seconds = len(x) / sr
+    br = {"name": name, "seconds": round(seconds, 4), "seed": 0, "events": []}
+    peak = 20 * math.log10(np.abs(x).max() + 1e-9)
+    for i, t0 in enumerate(onsets):
+        t1 = onsets[i + 1] if i + 1 < len(onsets) else seconds
+        near = [tr for tr in tracks if abs(tr["t"][0] - t0) < 0.04]
+        tone = None
+        if near:
+            best = max(near, key=lambda tr: max(tr["db"]))
+            tone = {"hz": float(np.clip(best["hz"][0], 30, 12000)), "harmonics": 4, "level": float(np.clip(max(best["db"]), -70, -1))}
+        seg = x[int(t0 * sr):int(t1 * sr)]
+        if len(seg) < 256:
+            seg = x[int(t0 * sr):int(t0 * sr) + 2048]
+        c = float(np.clip(librosa.feature.spectral_centroid(y=seg.astype(np.float32), sr=sr).mean(), 100, 12000))
+        lvl = float(np.clip(20 * math.log10(np.sqrt(np.mean(seg ** 2)) + 1e-9) - 20, -70, -1))
+        decay = float(np.clip((t1 - t0) * 1000 * 1.5, 20, 3000))
+        br["events"].append(B.event(t0, tone=tone, noise={"hz": c, "width": 4.0, "level": lvl},
+                                    env={"attack": 3.0, "hold": 0.0, "decay": decay}))
+    _ = peak
+    return br
+
+
+# ---------------------------------------------------------------- CMA-ES per event
+def _cma(pool, f_vec, x0, sigma, gens, lam, seed):
+    rng = np.random.default_rng(seed)
+    n = len(x0)
+    mu = lam // 2
+    w = np.log(mu + 0.5) - np.log(np.arange(1, mu + 1)); w /= w.sum()
+    mueff = 1 / np.sum(w ** 2)
+    cc, cs = (4 + mueff / n) / (n + 4 + 2 * mueff / n), (mueff + 2) / (n + mueff + 5)
+    c1 = 2 / ((n + 1.3) ** 2 + mueff)
+    cmu = min(1 - c1, 2 * (mueff - 2 + 1 / mueff) / ((n + 2) ** 2 + mueff))
+    damps = 1 + 2 * max(0, math.sqrt((mueff - 1) / (n + 1)) - 1) + cs
+    chin = math.sqrt(n) * (1 - 1 / (4 * n) + 1 / (21 * n * n))
+    m, C, pc, ps = np.array(x0, float), np.eye(n), np.zeros(n), np.zeros(n)
+    best_x, best_f = m.copy(), f_vec([m])[0]
+    for g in range(gens):
+        D2, Bm = np.linalg.eigh(C); D = np.sqrt(np.maximum(D2, 1e-20))
+        z = rng.standard_normal((lam, n))
+        xs = np.clip(m + sigma * (z * D) @ Bm.T, 0.001, 0.999)
+        fs = np.array(f_vec(list(xs)))
+        idx = np.argsort(fs)
+        if fs[idx[0]] < best_f:
+            best_f, best_x = float(fs[idx[0]]), xs[idx[0]].copy()
+        old = m
+        m = w @ xs[idx[:mu]]
+        y = (m - old) / sigma
+        invsq = Bm @ np.diag(1 / D) @ Bm.T
+        ps = (1 - cs) * ps + math.sqrt(cs * (2 - cs) * mueff) * invsq @ y
+        hs = np.linalg.norm(ps) / math.sqrt(1 - (1 - cs) ** (2 * (g + 1))) / chin < 1.4 + 2 / (n + 1)
+        pc = (1 - cc) * pc + hs * math.sqrt(cc * (2 - cc) * mueff) * y
+        art = (xs[idx[:mu]] - old) / sigma
+        C = (1 - c1 - cmu) * C + c1 * (np.outer(pc, pc) + (not hs) * cc * (2 - cc) * C) + cmu * art.T @ np.diag(w) @ art
+        sigma *= math.exp((cs / damps) * (np.linalg.norm(ps) / chin - 1))
+    return best_x, best_f
+
+
+def fit(x: np.ndarray, sr: int, events: int = 8, passes: int = 2, gens: int = 30, lam: int = 16,
+        workers: int | None = None, name: str = "sfx", log=print) -> dict:
+    br = initial(x, sr, events, name)
+    workers = workers or max(1, (os.cpu_count() or 8) - 2)
+    with ProcessPoolExecutor(workers, initializer=_init_worker, initargs=(x, sr)) as pool:
+        best_f = list(pool.map(objective, [br]))[0]
+        log(f"{name}: init E2 {best_f:.3f}, {len(br['events'])} events")
+        for p in range(passes):
+            for i in range(len(br["events"])):
+                t0 = br["events"][i]["t"]
+                base = br
+
+                def f_vec(us, i=i, t0=t0, base=base):
+                    cands = []
+                    for u in us:
+                        c = copy.deepcopy(base); c["events"][i] = decode(u, base["events"][i], t0); cands.append(c)
+                    return list(pool.map(objective, cands))
+
+                u, f = _cma(pool, f_vec, encode(br["events"][i], t0), 0.15 if p == 0 else 0.07, gens, lam, seed=i + 100 * p)
+                if f < best_f:
+                    br = copy.deepcopy(br); br["events"][i] = decode(u, br["events"][i], t0); best_f = f
+                log(f"  pass {p} event {i}: E2 {best_f:.3f}")
+    br["events"].sort(key=lambda e: e["t"])
+    return br
+
+
+# ---------------------------------------------------------------- matching pursuit (25 October 2026 19:55)
+def _smooth_power(v, sr, n_fft=1024, hop=256):
+    from scipy.ndimage import uniform_filter
+    from .render import stft
+    p = np.abs(stft(np.asarray(v, float), n_fft, hop)) ** 2
+    return np.maximum(uniform_filter(p, size=(7, 5), mode="nearest"), 0)
+
+
+def next_event(x, sr, br, hop=256, n_fft=1024, range_db=60.0):
+    """Seed the next event at the largest PERCEPTUAL deficit: reference dB minus current dB (clipped 0..40), counted
+    only where the reference is within range_db of its peak, smoothed over ~1/3 octave and ~30 ms. If a reference line
+    the current brief does not produce lies there, the seed is a tone, else a noise."""
+    from scipy.ndimage import uniform_filter
+    from .score import _line_mask, _peakiness
+    pr = _smooth_power(x, sr, n_fft, hop)
+    pc = _smooth_power(B.render(br, sr, seed=0)[:len(x)], sr, n_fft, hop) if br["events"] else np.zeros_like(pr)
+    dr, dc = 10 * np.log10(pr + 1e-20), 10 * np.log10(pc + 1e-20)
+    live = dr > dr.max() - range_db
+    deficit = np.clip(dr - dc, 0, 40) * live * (dr - (dr.max() - range_db)) / range_db
+    f = np.fft.rfftfreq(n_fft, 1 / sr)
+    deficit[f < 40] = 0
+    sm = uniform_filter(deficit, size=(9, 7), mode="nearest")
+    b, j = np.unravel_index(np.argmax(sm), sm.shape)
+    col = deficit[max(0, b - 4):b + 5].mean(0)
+    j0 = j
+    while j0 > 0 and col[j0 - 1] > col[j] * 0.3:
+        j0 -= 1
+    j1 = j
+    while j1 < len(col) - 1 and col[j1 + 1] > col[j] * 0.2:
+        j1 += 1
+    t0 = j0 * hop / sr
+    level = float(np.clip(dr[b, j] - 20 * math.log10(np.hanning(n_fft).sum() / 2), -75, -3))
+    env = {"attack": float(np.clip((j - j0) * hop / sr * 1000, 1, 300)), "hold": float(np.clip((j1 - j) * hop / sr * 500, 0, 1500)),
+           "decay": float(np.clip((j1 - j) * hop / sr * 1000, 20, 3500))}
+    # Unexplained reference lines in this patch -> tone at the strongest one.
+    d4, p4 = _peakiness(x, sr)
+    lr = _line_mask(d4, p4)
+    if br["events"]:
+        lc = _line_mask(*_peakiness(B.render(br, sr, seed=0)[:len(x)], sr))
+        lr = lr & ~lc
+    fb0, fb1 = int(f[max(0, b - 4)] / (sr / 4096)), int(f[min(len(f) - 1, b + 4)] / (sr / 4096)) + 1
+    ja, jb = int(j0 * hop / 512), int(j1 * hop / 512) + 1
+    patch = np.where(lr[fb0:fb1, ja:jb], d4[fb0:fb1, ja:jb], -300)
+    if patch.size and patch.max() > -300:
+        bb, _ = np.unravel_index(np.argmax(patch), patch.shape)
+        hz = (fb0 + bb) * sr / 4096
+        return B.event(t0, tone={"hz": float(np.clip(hz, 30, 12000)), "harmonics": 1, "level": level}, env=env)
+    return B.event(t0, noise={"hz": float(np.clip(f[b], 60, 16000)), "width": 1.5, "level": level - 6}, env=env)
+
+
+def fit_pursuit(x, sr, events=8, gens=25, lam=16, final_pass=True, workers=None, name="sfx", log=print):
+    workers = workers or max(1, (os.cpu_count() or 8) - 2)
+    br = {"name": name, "seconds": round(len(x) / sr, 4), "seed": 0, "events": []}
+    history = []
+    with ProcessPoolExecutor(workers, initializer=_init_worker, initargs=(x, sr)) as pool:
+        best_f = float("inf")
+        for k in range(events):
+            e = next_event(x, sr, br)
+            br = copy.deepcopy(br); br["events"].append(e)
+            i = len(br["events"]) - 1
+            t0 = e["t"]; base = br
+
+            def f_vec(us, i=i, t0=t0, base=base):
+                cands = []
+                for u in us:
+                    c = copy.deepcopy(base); c["events"][i] = decode(u, base["events"][i], t0); cands.append(c)
+                return list(pool.map(objective, cands))
+
+            u, f = _cma(pool, f_vec, encode(e, t0), 0.12, gens, lam, seed=k)
+            br["events"][i] = decode(u, e, t0)
+            best_f = f
+            history.append(copy.deepcopy(br))
+            log(f"{name}: event {k + 1} ({'tone' if 'tone' in e else 'noise'} at {t0:.3f} s) E2 {f:.3f}")
+        if final_pass:
+            for i in range(len(br["events"])):
+                t0 = br["events"][i]["t"]; base = br
+
+                def f_vec(us, i=i, t0=t0, base=base):
+                    cands = []
+                    for u in us:
+                        c = copy.deepcopy(base); c["events"][i] = decode(u, base["events"][i], t0); cands.append(c)
+                    return list(pool.map(objective, cands))
+
+                u, f = _cma(pool, f_vec, encode(br["events"][i], t0), 0.05, max(10, gens // 2), lam, seed=1000 + i)
+                if f < best_f:
+                    br = copy.deepcopy(br); br["events"][i] = decode(u, br["events"][i], t0); best_f = f
+            log(f"{name}: final pass E2 {best_f:.3f}")
+    # Events stay in pursuit order (most important first): the first k lines are the best k-line text.
+    return br, history
+
+
+def refine(x, sr, br, gens=20, lam=16, passes=1, sigma=0.08, workers=None, log=lambda m: None):
+    """25 October 2026 21:05: CMA correction of an existing brief (distilled or hand-written), one event at a time,
+    loudest first. FR : correction CMA d'un brief existant, événement par événement."""
+    workers = workers or max(1, (os.cpu_count() or 8) - 2)
+    br = copy.deepcopy(br)
+    with ProcessPoolExecutor(workers, initializer=_init_worker, initargs=(x, sr)) as pool:
+        best_f = list(pool.map(objective, [br]))[0]
+        log(f"refine init E2 {best_f:.3f}")
+        for p in range(passes):
+            for i in range(len(br["events"])):
+                t0 = br["events"][i]["t"]; base = br
+
+                def f_vec(us, i=i, t0=t0, base=base):
+                    cands = []
+                    for u in us:
+                        c = copy.deepcopy(base); c["events"][i] = decode(u, base["events"][i], t0); cands.append(c)
+                    return list(pool.map(objective, cands))
+
+                u, f = _cma(pool, f_vec, encode(br["events"][i], t0), sigma, gens, lam, seed=7 * i + p)
+                if f < best_f:
+                    br["events"][i] = decode(u, br["events"][i], t0); best_f = f
+                log(f"  pass {p} event {i}: E2 {best_f:.3f}")
+    return br
+
+
+def fit_dictionary(x, sr, recipe, events=16, dict_size=16, gens=15, lam=16, workers=None, name="sfx", log=lambda m: None):
+    """25 October 2026 21:20: greedy pursuit over a DICTIONARY of candidate events distilled from the detailed
+    recipe (harmonic families and NMF sheets). Each step tries every remaining candidate (in parallel), keeps the one
+    that lowers the objective most, then CMA-corrects it. Order = importance, so the first k lines are the best k-line
+    text. FR : poursuite gloutonne sur un dictionnaire d'événements distillés."""
+    from .distill import distill
+    cands = distill(recipe, dict_size, dict_size)["events"]
+    workers = workers or max(1, (os.cpu_count() or 8) - 2)
+    br = {"name": name, "seconds": round(len(x) / sr, 4), "seed": 0, "events": []}
+    history = []
+    with ProcessPoolExecutor(workers, initializer=_init_worker, initargs=(x, sr)) as pool:
+        best_f = float("inf")
+        for k in range(min(events, len(cands))):
+            trials = []
+            for c in cands:
+                b = copy.deepcopy(br); b["events"].append(c); trials.append(b)
+            fs = list(pool.map(objective, trials))
+            j = int(np.argmin(fs))
+            br = trials[j]; cands = cands[:j] + cands[j + 1:]
+            i = len(br["events"]) - 1; t0 = br["events"][i]["t"]; base = br
+
+            def f_vec(us, i=i, t0=t0, base=base):
+                cs = []
+                for u in us:
+                    c = copy.deepcopy(base); c["events"][i] = decode(u, base["events"][i], t0); cs.append(c)
+                return list(pool.map(objective, cs))
+
+            u, f = _cma(pool, f_vec, encode(br["events"][i], t0), 0.08, gens, lam, seed=k)
+            if f < fs[j]:
+                br["events"][i] = decode(u, br["events"][i], t0)
+            best_f = min(f, fs[j])
+            history.append(copy.deepcopy(br))
+            log(f"{name}: step {k + 1} E2 {best_f:.3f}")
+    return br, history

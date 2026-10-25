@@ -1,0 +1,60 @@
+{
+  "_doc": "26 October 2026: the three demonstration edits of semantic editing, written on component KINDS so they apply to any sound. target picks the component: a kind (attack, low, air, tone) and which one (the loudest). FR : trois retouches de démonstration, écrites sur les types de composants. 26 October 2026: 'Plus sec' now shortens EVERY component: shortening only the hiss exposed small partials it used to cover (seen on the signature sheet).",
+  "edits": [
+    {
+      "name": "Plus sec",
+      "moves": [
+        {
+          "kind": "*",
+          "pick": "all",
+          "set": {
+            "tail": 0.6
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plus métallique",
+      "moves": [
+        {
+          "kind": "tone",
+          "pick": "loudest",
+          "set": {
+            "material": 0.6
+          }
+        },
+        {
+          "kind": "tone",
+          "pick": "second",
+          "set": {
+            "material": 0.4
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plus lourd",
+      "moves": [
+        {
+          "kind": "low",
+          "set": {
+            "levelDb": 4
+          }
+        },
+        {
+          "kind": "tone",
+          "pick": "loudest",
+          "set": {
+            "pitchSt": -3
+          }
+        },
+        {
+          "kind": "attack",
+          "set": {
+            "levelDb": 2
+          }
+        }
+      ]
+    }
+  ]
+}

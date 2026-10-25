@@ -1,0 +1,172 @@
+# 25 October 2026 20:25: distil a detailed recipe (analysis + polish, at the judge's ceiling) into a short BRIEF.
+# Tones: partial tracks grouped into harmonic families (one f0, its harmonics, a tilt, a glide, one envelope).
+# Noise: the noise grid factorised by NMF into K sheets, each a 10-octave colour and one envelope. Then a CMA pass
+# corrects what the conversion lost. FR : distille la recette détaillée en un brief court (familles et NMF).
+from __future__ import annotations
+
+import math
+
+import numpy as np
+
+from . import brief as B
+from .render import band_centres
+
+
+def _env_from_curve(t, db):
+    """Attack/hold/decay (ms) and start time of a level curve in dB (peak-relative)."""
+    t, db = np.asarray(t, float), np.asarray(db, float)
+    db = db - db.max()
+    k = int(np.argmax(db))
+    on = np.nonzero(db > -30)[0]
+    i0 = int(on[0]) if on.size else 0
+    t0 = t[i0]
+    attack = max(0.5, (t[k] - t0) * 1000)
+    j = k
+    while j + 1 < len(db) and db[j + 1] > -3:
+        j += 1
+    hold = max(0.0, (t[j] - t[k]) * 1000)
+    tail = np.nonzero((np.arange(len(db)) > j) & (db > -40))[0]
+    if tail.size >= 2:
+        slope = np.polyfit(t[tail], db[tail], 1)[0]  # dB per s, negative
+        decay = 60.0 / max(-slope, 1e-3) * 1000
+    else:
+        decay = 60.0
+    return float(t0), {"attack": float(np.clip(attack, 0.5, 400)), "hold": float(np.clip(hold, 0, 2000)),
+                       "decay": float(np.clip(decay, 5, 4000))}
+
+
+def _env_points_from_curve(t, db, max_points=8, floor=-60.0, smooth_ms=20.0):
+    """Start time and <= max_points (ms, dB) breakpoints of a level curve, peak at 0 dB, simplified (Douglas-Peucker
+    with the tolerance raised until the count fits)."""
+    from scipy.ndimage import uniform_filter1d
+    from .analyze import _simplify
+    t, db = np.asarray(t, float), np.asarray(db, float)
+    # Smooth in power over smooth_ms first: factorisation activations flicker frame to frame, and a flickering
+    # curve cannot be drawn with 8 points without throwing whole stretches to the floor.
+    k = max(1, int(round(smooth_ms / 1000 / max(t[1] - t[0], 1e-6)))) if len(t) > 1 else 1
+    db = 10 * np.log10(uniform_filter1d(10 ** (db / 10), k, mode="nearest") + 1e-30)
+    db = np.maximum(db - db.max(), floor)
+    on = np.nonzero(db > floor + 1)[0]
+    if not on.size:
+        return float(t[0]), {"attack": 3.0, "hold": 0.0, "decay": 100.0, "points": [[0.0, 0.0], [10.0, -60.0]]}
+    i0, i1 = max(0, on[0] - 1), min(len(t) - 1, on[-1] + 1)
+    t, db = t[i0:i1 + 1], db[i0:i1 + 1]
+    tol = 1.0
+    while True:
+        keep = _simplify(t, np.zeros_like(db), db, 1e9, tol)
+        if len(keep) <= max_points:
+            break
+        tol *= 1.4
+    pts = [[round(float((t[k] - t[0]) * 1000), 1), round(float(db[k]), 1)] for k in keep]
+    pts[0][1] = min(pts[0][1], -40.0) if len(pts) > 1 else pts[0][1]
+    return float(t[0]), {"attack": 3.0, "hold": 0.0, "decay": 300.0, "points": pts}
+
+
+def tone_families(tracks, count, tol=0.08, max_points=8, max_partials=12):
+    tr = sorted(tracks, key=lambda t: -max(t["db"]))
+    used = [False] * len(tr)
+    fams = []
+    for i, a in enumerate(tr):
+        if used[i] or len(fams) >= count:
+            continue
+        fa = float(np.exp(np.mean(np.log(a["hz"]))))
+        best = None
+        for k in (1, 2, 3, 4):
+            f0 = fa / k
+            if f0 < 30:
+                break
+            members = []
+            for j, b in enumerate(tr):
+                if used[j]:
+                    continue
+                if min(a["t"][-1], b["t"][-1]) - max(a["t"][0], b["t"][0]) < 0.3 * (a["t"][-1] - a["t"][0]):
+                    continue
+                fb = float(np.exp(np.mean(np.log(b["hz"]))))
+                h = fb / f0
+                if 1 <= round(h) <= 40 and abs(h - round(h)) < tol:  # absolute: a fraction of one harmonic spacing
+                    members.append((j, int(round(h))))
+            e = sum(10 ** (max(tr[j]["db"]) / 10) for j, _ in members)
+            # A lower f0 must explain clearly more energy AND more than one extra member to win.
+            if best is None or (e > best[0] * 1.5 and len(members) > len(best[2]) + 1):
+                best = (e, f0, members)
+        _, f0, members = best
+        for j, _ in members:
+            used[j] = True
+        ks = np.array([h for _, h in members]); lv = np.array([max(tr[j]["db"]) for j, _ in members])
+        tilt = float(np.polyfit(np.log2(ks), lv, 1)[0]) if len(set(ks)) > 1 else -6.0
+        l1 = float(min(np.max(lv - tilt * np.log2(ks)), lv.max() + 6))
+        # Envelope of the family: summed power on a common 5 ms grid.
+        t = np.arange(min(tr[j]["t"][0] for j, _ in members), max(tr[j]["t"][-1] for j, _ in members) + 0.005, 0.005)
+        p = sum(10 ** (np.interp(t, tr[j]["t"], tr[j]["db"], left=-200, right=-200) / 10) for j, _ in members)
+        t0, env = _env_points_from_curve(t, 10 * np.log10(p + 1e-20), max_points)
+        a0 = tr[members[0][0]]
+        glide = float(12 * math.log2(a0["hz"][-1] / a0["hz"][0])) if len(a0["hz"]) > 1 else 0.0
+        # Sparse partials: the harmonic numbers really present, with their level relative to the family peak.
+        rel = {}
+        for (j, h), l in zip(members, lv):
+            rel[h] = max(rel.get(h, -999), float(l))
+        top = max(rel.values())
+        strongest = sorted(rel.items(), key=lambda kv: -kv[1])[:max_partials]
+        fams.append(B.event(t0, tone={"hz": float(np.clip(f0, 30, 12000)), "glide": float(np.clip(glide, -36, 36)),
+                                      "partials": [[int(h), round(v - top, 1)] for h, v in sorted(strongest)],
+                                      "level": float(np.clip(top, -80, 0)), "harmonics": 1.0, "tilt": 0.0, "stretch": 0.0},
+                            env=env))
+        continue
+        fams.append(B.event(t0, tone={"hz": float(np.clip(f0, 30, 12000)), "glide": float(np.clip(glide, -36, 36)),
+                                      "harmonics": float(np.clip(ks.max(), 1, 40)), "stretch": 0.0, "tilt": float(np.clip(tilt, -24, 6)),
+                                      "level": float(np.clip(l1, -80, 0))}, env=env))
+    return fams
+
+
+def nmf(V, k, iters=400, seed=0):
+    rng = np.random.default_rng(seed)
+    W = rng.random((V.shape[0], k)) + 0.1
+    H = rng.random((k, V.shape[1])) + 0.1
+    for _ in range(iters):  # Lee-Seung multiplicative updates, Euclidean
+        H *= (W.T @ V) / (W.T @ W @ H + 1e-20)
+        W *= (V @ H.T) / (W @ H @ H.T + 1e-20)
+    return W, H
+
+
+def noise_sheets(layer, count, max_points=8, master=None):
+    g = np.asarray(layer["grid"], float) - B.NOISE_REF_DB
+    times = np.asarray(layer["times"], float)
+    # Resample the keys to a uniform 5 ms grid so durations count fairly in the factorisation.
+    t = np.arange(times[0], times[-1] + 1e-9, 0.005)
+    gu = np.stack([np.interp(t, times, row) for row in g])
+    # Bake the gain curves the grid does not hold: the layer's fine curve and the recipe's master gate.
+    for env in (layer.get("env"), master):
+        if env:
+            gu = gu + np.interp(t, env["t"], env["db"])[None, :]
+    V = 10 ** (gu / 10)
+    W, H = nmf(V, count)
+    c = band_centres(layer["lo"], layer["hi"], g.shape[0])
+    out = []
+    for i in range(count):
+        wdb = 10 * np.log10(W[:, i] + 1e-30)
+        col = np.interp(np.log2(B.OCTAVES), np.log2(c), wdb)
+        peak = col.max()
+        hdb = 10 * np.log10(H[i] + 1e-30)
+        t0, env = _env_points_from_curve(t, hdb, max_points)
+        level = float(peak + hdb.max())
+        if level < -85:
+            continue
+        out.append(B.event(t0, noise={"colour": [float(np.clip(v - peak, -60, 0)) for v in col], "sweep": 0.0,
+                                      "level": float(np.clip(level, -80, 0)), "hz": 1000.0, "width": 3.0, "tilt": 0.0},
+                           env=env))
+    return out
+
+
+def distill(recipe: dict, tones: int = 4, sheets: int = 4) -> dict:
+    events = []
+    for layer in recipe["layers"]:
+        if layer["type"] == "partials" and tones:
+            tracks = layer["tracks"]
+            if recipe.get("env"):
+                m = recipe["env"]
+                tracks = [dict(tr, db=list(np.asarray(tr["db"]) + np.interp(tr["t"], m["t"], m["db"]))) for tr in tracks]
+            events += tone_families(tracks, tones)
+        elif layer["type"] == "noise" and sheets:
+            events += noise_sheets(layer, sheets, master=recipe.get("env"))
+    events.sort(key=lambda e: -max(e.get("tone", {}).get("level", -999), e.get("noise", {}).get("level", -999)))
+    return {"name": recipe.get("name", "sfx"), "seconds": recipe["seconds"], "seed": 0, "events": events}

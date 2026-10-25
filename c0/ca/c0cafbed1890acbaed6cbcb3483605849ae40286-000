@@ -1,0 +1,31 @@
+# 25 October 2026 16:50: the method table, single source for Bench.py, Reproduce.py and the app.
+# Name: P<partials>G<bands><u|a: uniform or adaptive keys><E: fine gain curve>.
+# FR : la table des méthodes, source unique.
+
+METHODS = {
+    "G08u": dict(bands=8, keys=8, adaptive=False),
+    "G16u": dict(bands=16, keys=16, adaptive=False),
+    "G32u": dict(bands=32, keys=32, adaptive=False),
+    "G32a": dict(bands=32, keys=32, adaptive=True),
+    "G64a": dict(bands=64, keys=64, adaptive=True),
+    "P16G32a": dict(bands=32, keys=32, adaptive=True, partials=16),
+    "P32G64a": dict(bands=64, keys=64, adaptive=True, partials=32),
+    "G32aE": dict(bands=32, keys=32, adaptive=True, env_tol_db=1.0),
+    "P16G32aE": dict(bands=32, keys=32, adaptive=True, partials=16, env_tol_db=1.0),
+    "P16G16aE": dict(bands=16, keys=16, adaptive=True, partials=16, env_tol_db=1.0),
+    "P32G32aE": dict(bands=32, keys=32, adaptive=True, partials=32, env_tol_db=0.5),
+    "P128G32aE": dict(bands=32, keys=32, adaptive=True, partials=128, env_tol_db=0.5),
+    "P256G32aE": dict(bands=32, keys=32, adaptive=True, partials=256, env_tol_db=0.5, track=dict(peak_db=8, cents=40)),
+    "P128G32aED": dict(bands=32, keys=32, adaptive=True, partials=128, env_tol_db=0.5, demod=True),
+    "P256G32aED": dict(bands=32, keys=32, adaptive=True, partials=256, env_tol_db=0.5, demod=True, track=dict(peak_db=8, cents=40)),
+    "P128G32aEM": dict(bands=32, keys=32, adaptive=True, partials=128, env_tol_db=0.5, master_tol_db=1.0),
+    "P256G32aEM": dict(bands=32, keys=32, adaptive=True, partials=256, env_tol_db=0.5, master_tol_db=1.0, track=dict(peak_db=8, cents=40)),
+    "P128G32aM": dict(bands=32, keys=32, adaptive=True, partials=128, master_tol_db=1.0),
+    "P256G32aM": dict(bands=32, keys=32, adaptive=True, partials=256, master_tol_db=1.0, track=dict(peak_db=8, cents=40)),
+    "P256G32a": dict(bands=32, keys=32, adaptive=True, partials=256, track=dict(peak_db=8, cents=40)),
+    "P256G64aEM": dict(bands=64, keys=32, adaptive=True, partials=256, env_tol_db=0.5, master_tol_db=1.0, track=dict(peak_db=8, cents=40)),
+    "P512G32aEMs": dict(bands=32, keys=32, adaptive=True, partials=512, env_tol_db=0.5, master_tol_db=1.0, track=dict(peak_db=6, cents=40, min_ms=15)),
+    "P256G32aEMh": dict(bands=32, keys=32, adaptive=True, partials=256, env_tol_db=0.5, master_tol_db=1.0, track=dict(peak_db=8, cents=40, n_fft=2048, hop=128)),
+}
+
+DEFAULT = "P256G32aEM"

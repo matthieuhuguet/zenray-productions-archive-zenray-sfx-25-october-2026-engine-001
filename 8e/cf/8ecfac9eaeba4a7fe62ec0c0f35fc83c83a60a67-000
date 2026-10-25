@@ -1,0 +1,38 @@
+# 25 October 2026 21:40: front end for dirty references (a YouTube rip, a phone recording). Estimate the stationary
+# noise from the quietest frames, cut the sound out (energy above the floor), and attenuate the noise by a smoothed
+# Wiener-like gain. The resynthesis that follows is clean by construction: a recipe holds no noise floor unless the
+# reference forces one. FR : nettoyage d'une référence sale, bruit stationnaire estimé sur les trames calmes.
+from __future__ import annotations
+
+import numpy as np
+from scipy.ndimage import uniform_filter
+
+from .render import istft, stft
+
+CLEAN = {"nFft": 1024, "hop": 256, "quietShare": 0.15, "over": 4.0, "floorGain": 0.0001, "smooth": (3, 5),
+         "trimDb": 8.0, "marginMs": 30.0}
+
+
+def noise_psd(x, n_fft, hop, share):
+    P = np.abs(stft(x, n_fft, hop)) ** 2
+    e = P.sum(0)
+    k = max(3, int(len(e) * share))
+    return P[:, np.argsort(e)[:k]].mean(1), P
+
+
+def clean(x: np.ndarray, sr: int, cfg: dict | None = None) -> tuple[np.ndarray, dict]:
+    c = dict(CLEAN, **(cfg or {}))
+    n_fft, hop = c["nFft"], c["hop"]
+    N, P = noise_psd(x, n_fft, hop, c["quietShare"])
+    X = stft(x, n_fft, hop)
+    Ps = uniform_filter(P, size=c["smooth"], mode="nearest")
+    g = np.clip(1 - c["over"] * N[:, None] / np.maximum(Ps, 1e-30), c["floorGain"], 1.0)
+    y = istft(X * np.sqrt(g), n_fft, hop, len(x))
+    # Trim to where the cleaned energy stands trimDb above the residual floor, plus a margin.
+    e = (np.abs(stft(y, n_fft, hop)) ** 2).sum(0)
+    floor = np.percentile(e, 15)
+    on = np.nonzero(10 * np.log10(e / max(floor, 1e-30) + 1e-30) > c["trimDb"])[0]
+    m = int(c["marginMs"] / 1000 * sr)
+    a = max(0, on[0] * hop - n_fft // 2 - m) if on.size else 0
+    b = min(len(y), on[-1] * hop + n_fft // 2 + m) if on.size else len(y)
+    return y[a:b], {"start": a / sr, "end": b / sr, "noiseDb": float(10 * np.log10(N.mean() + 1e-30))}

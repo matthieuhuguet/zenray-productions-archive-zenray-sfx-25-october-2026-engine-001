@@ -1,0 +1,7 @@
+{
+  "_doc": "25 October 2026 22:00: scenes are ordered archetypes with start times, triggered by words of a description. The first scene whose words match wins; otherwise the archetypes whose own words appear are laid out in the order of the text. FR : scènes déclenchées par des mots.",
+  "chest_open": {"words": ["chest", "coffre", "treasure chest", "ouvre un coffre", "open chest", "ouvrir un coffre"], "steps": [
+    ["latch_click", 0.0], ["metal_clank", 0.02], ["wood_creak", 0.12], ["wood_thud", 0.78], ["dust_tail", 0.8], ["treasure_shimmer", 0.86]]},
+  "door_open": {"words": ["door", "porte"], "steps": [["latch_click", 0.0], ["wood_creak", 0.08], ["hinge_squeak", 0.3]]},
+  "sword_hit": {"words": ["sword hit", "coup d'epee", "slash"], "steps": [["whoosh", 0.0], ["metal_clank", 0.33], ["heavy_impact", 0.33]]}
+}
