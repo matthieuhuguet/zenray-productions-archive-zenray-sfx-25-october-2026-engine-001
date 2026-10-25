@@ -1,0 +1,590 @@
+[
+ {
+  "ref": "10-Mail-Open",
+  "method": "G08u",
+  "params": 72,
+  "exact": 53.32,
+  "invariant": 73.28,
+  "invErrors": {
+   "stft": 2.3819,
+   "mel": 2.4002,
+   "envelope": 4.1909,
+   "onset": 1.39
+  },
+  "seconds": 0.73
+ },
+ {
+  "ref": "10-Mail-Open",
+  "method": "G16u",
+  "params": 272,
+  "exact": 68.76,
+  "invariant": 87.25,
+  "invErrors": {
+   "stft": 1.5638,
+   "mel": 1.3981,
+   "envelope": 2.2082,
+   "onset": 2.0732
+  },
+  "seconds": 0.04
+ },
+ {
+  "ref": "10-Mail-Open",
+  "method": "G32u",
+  "params": 1056,
+  "exact": 78.53,
+  "invariant": 95.08,
+  "invErrors": {
+   "stft": 1.2853,
+   "mel": 0.9734,
+   "envelope": 0.9565,
+   "onset": 1.2274
+  },
+  "seconds": 0.04
+ },
+ {
+  "ref": "10-Mail-Open",
+  "method": "G32a",
+  "params": 1056,
+  "exact": 80.91,
+  "invariant": 96.77,
+  "invErrors": {
+   "stft": 1.2042,
+   "mel": 0.8091,
+   "envelope": 0.9942,
+   "onset": 0.4167
+  },
+  "seconds": 0.04
+ },
+ {
+  "ref": "10-Mail-Open",
+  "method": "G64a",
+  "params": 4160,
+  "exact": 83.49,
+  "invariant": 97.65,
+  "invErrors": {
+   "stft": 1.1435,
+   "mel": 0.6902,
+   "envelope": 0.6989,
+   "onset": 0.3061
+  },
+  "seconds": 0.04
+ },
+ {
+  "ref": "10-Mail-Open",
+  "method": "P16G32a",
+  "params": 1221,
+  "exact": 84.57,
+  "invariant": 97.85,
+  "invErrors": {
+   "stft": 0.9441,
+   "mel": 0.556,
+   "envelope": 0.8564,
+   "onset": 0.4736
+  },
+  "seconds": 0.3
+ },
+ {
+  "ref": "10-Mail-Open",
+  "method": "P32G64a",
+  "params": 4325,
+  "exact": 86.51,
+  "invariant": 98.58,
+  "invErrors": {
+   "stft": 0.8756,
+   "mel": 0.4307,
+   "envelope": 0.5943,
+   "onset": 0.3482
+  },
+  "seconds": 0.3
+ },
+ {
+  "ref": "12-Denied",
+  "method": "G08u",
+  "params": 72,
+  "exact": 53.43,
+  "invariant": 77.94,
+  "invErrors": {
+   "stft": 2.1331,
+   "mel": 2.1152,
+   "envelope": 3.9658,
+   "onset": 0.201
+  },
+  "seconds": 0.02
+ },
+ {
+  "ref": "12-Denied",
+  "method": "G16u",
+  "params": 272,
+  "exact": 72.96,
+  "invariant": 92.82,
+  "invErrors": {
+   "stft": 1.4094,
+   "mel": 1.1105,
+   "envelope": 2.0465,
+   "onset": -0.0742
+  },
+  "seconds": 0.02
+ },
+ {
+  "ref": "12-Denied",
+  "method": "G32u",
+  "params": 1056,
+  "exact": 78.93,
+  "invariant": 96.73,
+  "invErrors": {
+   "stft": 1.0227,
+   "mel": 0.6424,
+   "envelope": 1.1901,
+   "onset": -0.6579
+  },
+  "seconds": 0.03
+ },
+ {
+  "ref": "12-Denied",
+  "method": "G32a",
+  "params": 1056,
+  "exact": 79.09,
+  "invariant": 96.92,
+  "invErrors": {
+   "stft": 1.0015,
+   "mel": 0.6116,
+   "envelope": 1.2097,
+   "onset": -0.522
+  },
+  "seconds": 0.03
+ },
+ {
+  "ref": "12-Denied",
+  "method": "G64a",
+  "params": 4160,
+  "exact": 82.34,
+  "invariant": 98.06,
+  "invErrors": {
+   "stft": 0.9243,
+   "mel": 0.4892,
+   "envelope": 0.9227,
+   "onset": -0.0762
+  },
+  "seconds": 0.03
+ },
+ {
+  "ref": "12-Denied",
+  "method": "P16G32a",
+  "params": 1194,
+  "exact": 78.28,
+  "invariant": 97.55,
+  "invErrors": {
+   "stft": 0.9094,
+   "mel": 0.5493,
+   "envelope": 1.1531,
+   "onset": 0.0725
+  },
+  "seconds": 0.18
+ },
+ {
+  "ref": "12-Denied",
+  "method": "P32G64a",
+  "params": 4445,
+  "exact": 80.43,
+  "invariant": 98.06,
+  "invErrors": {
+   "stft": 0.8605,
+   "mel": 0.4403,
+   "envelope": 1.0025,
+   "onset": 0.0933
+  },
+  "seconds": 0.18
+ },
+ {
+  "ref": "15-TimeFall-Shelter",
+  "method": "G08u",
+  "params": 72,
+  "exact": 64.55,
+  "invariant": 86.98,
+  "invErrors": {
+   "stft": 1.9083,
+   "mel": 1.279,
+   "envelope": 2.9272,
+   "onset": -0.1707
+  },
+  "seconds": 0.04
+ },
+ {
+  "ref": "15-TimeFall-Shelter",
+  "method": "G16u",
+  "params": 272,
+  "exact": 69.33,
+  "invariant": 90.67,
+  "invErrors": {
+   "stft": 1.771,
+   "mel": 1.0512,
+   "envelope": 2.3432,
+   "onset": -0.1365
+  },
+  "seconds": 0.04
+ },
+ {
+  "ref": "15-TimeFall-Shelter",
+  "method": "G32u",
+  "params": 1056,
+  "exact": 70.79,
+  "invariant": 91.97,
+  "invErrors": {
+   "stft": 1.6998,
+   "mel": 0.8767,
+   "envelope": 2.1566,
+   "onset": 0.1316
+  },
+  "seconds": 0.04
+ },
+ {
+  "ref": "15-TimeFall-Shelter",
+  "method": "G32a",
+  "params": 1056,
+  "exact": 70.73,
+  "invariant": 91.83,
+  "invErrors": {
+   "stft": 1.7058,
+   "mel": 0.8775,
+   "envelope": 2.1838,
+   "onset": 0.1653
+  },
+  "seconds": 0.04
+ },
+ {
+  "ref": "15-TimeFall-Shelter",
+  "method": "G64a",
+  "params": 4160,
+  "exact": 77.13,
+  "invariant": 94.83,
+  "invErrors": {
+   "stft": 1.5596,
+   "mel": 0.6813,
+   "envelope": 1.5445,
+   "onset": -0.0391
+  },
+  "seconds": 0.05
+ },
+ {
+  "ref": "15-TimeFall-Shelter",
+  "method": "P16G32a",
+  "params": 1290,
+  "exact": 75.48,
+  "invariant": 95.71,
+  "invErrors": {
+   "stft": 1.2408,
+   "mel": 0.7903,
+   "envelope": 1.472,
+   "onset": 0.1864
+  },
+  "seconds": 0.34
+ },
+ {
+  "ref": "15-TimeFall-Shelter",
+  "method": "P32G64a",
+  "params": 4544,
+  "exact": 79.97,
+  "invariant": 97.06,
+  "invErrors": {
+   "stft": 1.0666,
+   "mel": 0.5288,
+   "envelope": 1.2439,
+   "onset": -0.0326
+  },
+  "seconds": 0.34
+ },
+ {
+  "ref": "21-Awaiting-Signal",
+  "method": "G08u",
+  "params": 72,
+  "exact": 68.38,
+  "invariant": 89.58,
+  "invErrors": {
+   "stft": 1.5915,
+   "mel": 1.5206,
+   "envelope": 2.4294,
+   "onset": 0.4533
+  },
+  "seconds": 0.03
+ },
+ {
+  "ref": "21-Awaiting-Signal",
+  "method": "G16u",
+  "params": 272,
+  "exact": 75.42,
+  "invariant": 93.68,
+  "invErrors": {
+   "stft": 1.2821,
+   "mel": 1.0574,
+   "envelope": 1.8353,
+   "onset": 0.6081
+  },
+  "seconds": 0.03
+ },
+ {
+  "ref": "21-Awaiting-Signal",
+  "method": "G32u",
+  "params": 1056,
+  "exact": 80.97,
+  "invariant": 97.28,
+  "invErrors": {
+   "stft": 0.9847,
+   "mel": 0.6918,
+   "envelope": 1.0913,
+   "onset": 0.3224
+  },
+  "seconds": 0.04
+ },
+ {
+  "ref": "21-Awaiting-Signal",
+  "method": "G32a",
+  "params": 1056,
+  "exact": 80.82,
+  "invariant": 97.23,
+  "invErrors": {
+   "stft": 0.9962,
+   "mel": 0.6895,
+   "envelope": 1.142,
+   "onset": -0.1665
+  },
+  "seconds": 0.04
+ },
+ {
+  "ref": "21-Awaiting-Signal",
+  "method": "G64a",
+  "params": 4160,
+  "exact": 83.08,
+  "invariant": 98.07,
+  "invErrors": {
+   "stft": 0.8912,
+   "mel": 0.5106,
+   "envelope": 0.9096,
+   "onset": -0.2282
+  },
+  "seconds": 0.04
+ },
+ {
+  "ref": "21-Awaiting-Signal",
+  "method": "P16G32a",
+  "params": 1374,
+  "exact": 84.02,
+  "invariant": 98.5,
+  "invErrors": {
+   "stft": 0.8212,
+   "mel": 0.4542,
+   "envelope": 0.772,
+   "onset": -0.1602
+  },
+  "seconds": 0.28
+ },
+ {
+  "ref": "21-Awaiting-Signal",
+  "method": "P32G64a",
+  "params": 4652,
+  "exact": 85.67,
+  "invariant": 98.93,
+  "invErrors": {
+   "stft": 0.7614,
+   "mel": 0.3436,
+   "envelope": 0.5979,
+   "onset": -0.1254
+  },
+  "seconds": 0.28
+ },
+ {
+  "ref": "25-Inv-Close-End",
+  "method": "G08u",
+  "params": 72,
+  "exact": 41.3,
+  "invariant": 64.68,
+  "invErrors": {
+   "stft": 2.4399,
+   "mel": 2.9435,
+   "envelope": 5.356,
+   "onset": 0.2299
+  },
+  "seconds": 0.02
+ },
+ {
+  "ref": "25-Inv-Close-End",
+  "method": "G16u",
+  "params": 272,
+  "exact": 61.86,
+  "invariant": 86.24,
+  "invErrors": {
+   "stft": 1.484,
+   "mel": 1.5215,
+   "envelope": 3.0222,
+   "onset": 1.0397
+  },
+  "seconds": 0.02
+ },
+ {
+  "ref": "25-Inv-Close-End",
+  "method": "G32u",
+  "params": 1056,
+  "exact": 78.46,
+  "invariant": 96.31,
+  "invErrors": {
+   "stft": 1.0016,
+   "mel": 0.7374,
+   "envelope": 1.4281,
+   "onset": -0.3871
+  },
+  "seconds": 0.03
+ },
+ {
+  "ref": "25-Inv-Close-End",
+  "method": "G32a",
+  "params": 1056,
+  "exact": 80.15,
+  "invariant": 97.42,
+  "invErrors": {
+   "stft": 0.9492,
+   "mel": 0.662,
+   "envelope": 1.1027,
+   "onset": -0.2251
+  },
+  "seconds": 0.03
+ },
+ {
+  "ref": "25-Inv-Close-End",
+  "method": "G64a",
+  "params": 4160,
+  "exact": 84.25,
+  "invariant": 98.52,
+  "invErrors": {
+   "stft": 0.855,
+   "mel": 0.4457,
+   "envelope": 0.6815,
+   "onset": -0.2952
+  },
+  "seconds": 0.03
+ },
+ {
+  "ref": "25-Inv-Close-End",
+  "method": "P16G32a",
+  "params": 1269,
+  "exact": 80.92,
+  "invariant": 97.77,
+  "invErrors": {
+   "stft": 0.8226,
+   "mel": 0.5844,
+   "envelope": 1.08,
+   "onset": -0.2337
+  },
+  "seconds": 0.18
+ },
+ {
+  "ref": "25-Inv-Close-End",
+  "method": "P32G64a",
+  "params": 4523,
+  "exact": 84.67,
+  "invariant": 98.82,
+  "invErrors": {
+   "stft": 0.7278,
+   "mel": 0.3663,
+   "envelope": 0.67,
+   "onset": -0.2588
+  },
+  "seconds": 0.19
+ },
+ {
+  "ref": "3-Cufflinks-Open",
+  "method": "G08u",
+  "params": 72,
+  "exact": 58.39,
+  "invariant": 79.85,
+  "invErrors": {
+   "stft": 1.8003,
+   "mel": 1.9517,
+   "envelope": 3.8834,
+   "onset": 0.5085
+  },
+  "seconds": 0.04
+ },
+ {
+  "ref": "3-Cufflinks-Open",
+  "method": "G16u",
+  "params": 272,
+  "exact": 67.57,
+  "invariant": 86.89,
+  "invErrors": {
+   "stft": 1.4486,
+   "mel": 1.3937,
+   "envelope": 3.1059,
+   "onset": 0.5466
+  },
+  "seconds": 0.04
+ },
+ {
+  "ref": "3-Cufflinks-Open",
+  "method": "G32u",
+  "params": 1056,
+  "exact": 75.22,
+  "invariant": 92.41,
+  "invErrors": {
+   "stft": 1.1196,
+   "mel": 0.894,
+   "envelope": 2.3311,
+   "onset": 0.6091
+  },
+  "seconds": 0.05
+ },
+ {
+  "ref": "3-Cufflinks-Open",
+  "method": "G32a",
+  "params": 1056,
+  "exact": 75.55,
+  "invariant": 93.14,
+  "invErrors": {
+   "stft": 1.0803,
+   "mel": 0.8804,
+   "envelope": 2.2463,
+   "onset": 0.2903
+  },
+  "seconds": 0.05
+ },
+ {
+  "ref": "3-Cufflinks-Open",
+  "method": "G64a",
+  "params": 4160,
+  "exact": 80.27,
+  "invariant": 96.28,
+  "invErrors": {
+   "stft": 0.9259,
+   "mel": 0.5981,
+   "envelope": 1.5918,
+   "onset": -0.1638
+  },
+  "seconds": 0.05
+ },
+ {
+  "ref": "3-Cufflinks-Open",
+  "method": "P16G32a",
+  "params": 1269,
+  "exact": 78.73,
+  "invariant": 95.56,
+  "invErrors": {
+   "stft": 0.9545,
+   "mel": 0.7414,
+   "envelope": 1.7406,
+   "onset": 0.1527
+  },
+  "seconds": 0.4
+ },
+ {
+  "ref": "3-Cufflinks-Open",
+  "method": "P32G64a",
+  "params": 4520,
+  "exact": 82.58,
+  "invariant": 97.72,
+  "invErrors": {
+   "stft": 0.8236,
+   "mel": 0.4962,
+   "envelope": 1.1607,
+   "onset": -0.1629
+  },
+  "seconds": 0.4
+ }
+]

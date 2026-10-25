@@ -1,0 +1,15 @@
+# 25 October 2026 15:55: measure the dB offset between a noise grid and the power the renderer really produces
+# (an inconsistent STFT loses power when it is resynthesised). FR : calibre le décalage de niveau du bruit.
+import sys; sys.path.insert(0, ".")
+import numpy as np
+from zrsfx.render import render, stft
+for nfft, hop in [(1024, 128), (1024, 256)]:
+    r = {"seconds": 2.0, "layers": [{"type": "noise", "lo": 30, "hi": 20000, "nFft": nfft, "hop": hop,
+         "times": [0, 2], "grid": np.zeros((8, 2)).tolist()}]}
+    off = []
+    for s in range(4):
+        y = render(r, seed=s)
+        p = np.abs(stft(y, 1024, 128)) ** 2
+        f = np.fft.rfftfreq(1024, 1 / 48000)
+        off.append(10 * np.log10(p[(f > 200) & (f < 15000), 20:-20].mean()))
+    print(nfft, hop, "measured dB for a 0 dB grid:", np.round(off, 3), "mean", round(float(np.mean(off)), 3))

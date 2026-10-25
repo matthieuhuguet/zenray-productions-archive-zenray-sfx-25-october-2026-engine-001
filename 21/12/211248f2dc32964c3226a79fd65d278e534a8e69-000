@@ -1,0 +1,67 @@
+# 26 October 2026: the listening proof of semantic editing. For every sound: the original (all sliders at zero, equal
+# to the reproduction) and the three demonstration edits of params/semantic-demo.json, each with its signature
+# (spectrogram), the components it moved, and its audibility in dB. Writes a self-contained listen.html (audio as
+# FLAC, fonts embedded) and signatures.png. FR : preuve d'écoute de l'édition sémantique.
+import argparse, base64, io, json, sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT))
+import numpy as np, soundfile as sf
+from PIL import Image, ImageDraw, ImageFont
+from zrsfx import semantic as SM
+sys.path.insert(0, str(ROOT / "Scripts"))
+from ListenSheet import spec_img, png_b64, flac_b64, FONTS, SPEC
+
+def resolve(m, mv):
+    comps = [c for c in m["components"] if mv["kind"] in ("*", c.get("kind"))]
+    if not comps:
+        return []
+    if mv.get("pick") == "all":
+        return comps
+    comps.sort(key=lambda c: -c["desc"]["share"])
+    k = {"loudest": 0, "second": 1}.get(mv.get("pick", "loudest"), 0)
+    return [comps[k]] if k < len(comps) else []
+
+ap = argparse.ArgumentParser(); ap.add_argument("--run", default="out/repro-03"); ap.add_argument("--out", default="out/semantic-demo-01")
+a = ap.parse_args(); out = ROOT / a.out; out.mkdir(parents=True, exist_ok=True)
+demo = json.loads((ROOT / "params/semantic-demo.json").read_text())["edits"]
+cards, sheet_rows = [], []
+for rp in sorted((ROOT / a.run).glob("*.recipe.json")):
+    r = json.load(open(rp)); m = SM.build(r); sr = m["sr"]
+    base = SM.render(m, {}, 7)
+    variants = [{"name": "Original", "what": "tous les curseurs à zéro", "y": base, "dist": None}]
+    for d in demo:
+        edits, what = {}, []
+        for mv in d["moves"]:
+            cs = resolve(m, mv)
+            for c in cs:
+                edits.setdefault(str(c["index"]), {}).update(mv["set"])
+            if cs:
+                who = "tous les composants" if mv.get("pick") == "all" else ", ".join(c["name"] for c in cs)
+                what.append(f"{who} : " + ", ".join(f"{k} {v}" for k, v in mv["set"].items()))
+        variants.append({"name": d["name"], "what": "; ".join(what) or "aucun composant de ce type", "y": SM.render(m, edits, 7),
+                         "dist": SM.edit_distance(m, edits) if edits else None, "edits": edits})
+    peak = max(np.abs(v["y"]).max() for v in variants)
+    g = 10 ** (-1 / 20) / peak if peak > 10 ** (-1 / 20) else 1.0  # one common gain per sound, so levels stay comparable
+    for v in variants:
+        v["img"] = spec_img(v["y"] * g, sr)
+    cards.append({"name": r["name"], "variants": [{"name": v["name"], "what": v["what"], "audio": flac_b64(v["y"] * g, sr), "png": png_b64(v["img"]),
+                  "dist": v["dist"]} for v in variants], "components": [c["name"] for c in m["components"]]})
+    sheet_rows.append((r["name"], variants))
+    print(r["name"], [(v["name"], v["dist"]["localDb"] if v["dist"] else 0) for v in variants], flush=True)
+# Signature sheet: original and the three edits side by side for every sound.
+W, H = 420, 130
+sheet = Image.new("RGB", (4 * W + 50, len(sheet_rows) * (H + 30) + 30), "white"); dr = ImageDraw.Draw(sheet)
+UI = ImageFont.truetype(str(FONTS / "InterVariable.ttf"), 13)  # a real font, so accents render
+dr.text((10, 8), "Édition sémantique : original (à gauche), puis Plus sec, Plus métallique, Plus lourd", fill="black", font=UI)
+for i, (name, vs) in enumerate(sheet_rows):
+    y0 = 30 + i * (H + 30); dr.text((10, y0 - 2), name, fill="black", font=UI)
+    for j, v in enumerate(vs):
+        sheet.paste(v["img"].resize((W, H)), (10 + j * (W + 10), y0 + 14))
+        if v["dist"]:
+            dr.text((14 + j * (W + 10), y0 + 16), f"{v['name']} : {v['dist']['word']}, {v['dist']['localDb']} dB".replace(".", ","), fill="white", font=UI)
+sheet.save(out / "signatures.png")
+font = lambda f: base64.b64encode((FONTS / f).read_bytes()).decode()
+html = (ROOT / "app/semantic-demo.template.html").read_text()
+html = html.replace("__DATA__", json.dumps(cards, ensure_ascii=False)).replace("__INTER__", font("InterVariable-latin.woff2")) \
+    .replace("__SERIF__", font("AnthropicSerif-Romans-latin-400.woff2")).replace("__SECTRA__", font("GT-Sectra-LCGV-Regular-Italic.woff2"))
+(out / "listen.html").write_text(html); print(out / "listen.html"); print(out / "signatures.png")

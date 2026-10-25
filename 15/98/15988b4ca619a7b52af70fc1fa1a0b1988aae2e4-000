@@ -1,0 +1,20 @@
+# 25 October 2026 23:15: proof that the long text renders the same sound as the recipe (held-out seed), and that a
+# broken line is refused. FR : preuve que le texte long rend le même son, et refus d'une ligne cassée.
+import sys, json, glob; sys.path.insert(0, ".")
+import numpy as np, soundfile as sf
+from zrsfx import recipetext as T
+from zrsfx.render import render
+from zrsfx.score import score
+ok = True
+for f in sorted(glob.glob(sys.argv[1])):
+    r = json.load(open(f)); t = T.to_text(r); r2 = T.from_text(t)
+    x, sr = sf.read(f"refs/{r['name']}.wav")
+    a, b = score(render(r, sr, seed=7), x, sr)["invariant"], score(render(r2, sr, seed=7), x, sr)["invariant"]
+    d = np.abs(render(r, sr, seed=7) - render(r2, sr, seed=7)).max()
+    print(r["name"].ljust(22), "recipe", a, "| text", b, "| lines", len(t.splitlines()), "| words", len(t.split()), "| max sample diff", f"{d:.1e}")
+    ok &= abs(a - b) < 0.05
+try:
+    T.from_text(t.replace(" Hz ", " Hx ", 1)); ok = False; print("RED FAILED")
+except ValueError as e:
+    print("red ok:", str(e)[:50])
+sys.exit(0 if ok else 1)

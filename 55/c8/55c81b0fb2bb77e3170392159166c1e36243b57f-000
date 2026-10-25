@@ -1,0 +1,13 @@
+# 25 October 2026 16:30: proof that the torch render equals the numpy render (same recipe, same seed).
+# FR : preuve que le rendu torch égale le rendu numpy.
+import sys, json; sys.path.insert(0, ".")
+import numpy as np, torch
+from zrsfx.render import render
+from zrsfx.polish import TorchRecipe
+r = json.load(open(sys.argv[1]))
+a = render(r, seed=0)
+m = TorchRecipe(r, 48000, [0])
+with torch.no_grad():
+    b = m(0).numpy()
+err = np.abs(a - b).max() / np.abs(a).max()
+print("max relative difference", err); sys.exit(0 if err < 1e-6 else 1)

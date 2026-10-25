@@ -1,0 +1,15 @@
+# 25 October 2026 19:35: proof that a brief survives text both ways (print -> parse -> print is identical) and that
+# a broken line is refused. FR : preuve aller-retour du texte, et refus d'une ligne cassée.
+import sys, time; sys.path.insert(0, ".")
+import soundfile as sf
+from zrsfx import brief as B, brieffit as F
+x, sr = sf.read("refs/12-Denied.wav")
+br = F.initial(x, sr, 8, "12-Denied")
+t1 = B.to_text(br); t2 = B.to_text(B.from_text(t1))
+print(t1); ok = t1 == t2
+try:
+    B.from_text(t1.replace("harmonics", "harmonix")); ok = False; print("RED FAILED: broken text accepted")
+except ValueError as e:
+    print("red ok:", str(e)[:60])
+F._init_worker(x, sr); t = time.time(); f = F.objective(br); print("objective", round(f, 3), f"{time.time()-t:.2f}s per evaluation")
+print("text roundtrip identical:", ok); sys.exit(0 if ok else 1)

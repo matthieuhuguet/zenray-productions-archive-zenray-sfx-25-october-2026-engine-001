@@ -1,0 +1,37 @@
+# 25 October 2026 16:00: the method bench. Every method x every reference: analyse, render from the recipe alone,
+# judge with the external loss (exact and invariant), count recipe numbers. Writes out/bench/<run>.json and WAVs.
+# FR : banc des méthodes, chaque méthode sur chaque référence, rendu depuis la seule recette, jugé, compté.
+import argparse, json, sys, time
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import numpy as np, soundfile as sf
+from zrsfx.analyze import analyze, param_count
+from zrsfx.render import render
+from zrsfx.score import score
+
+from zrsfx.methods import METHODS
+
+ap = argparse.ArgumentParser()
+ap.add_argument("--methods", default=",".join(METHODS))
+ap.add_argument("--refs", default="refs")
+ap.add_argument("--run", default="bench")
+a = ap.parse_args()
+out = Path("out") / a.run; out.mkdir(parents=True, exist_ok=True)
+rows = []
+for ref in sorted(Path(a.refs).glob("*.wav")):
+    x, sr = sf.read(ref)
+    for m in a.methods.split(","):
+        t0 = time.time()
+        r = analyze(x, sr, name=ref.stem, **METHODS[m])
+        y = render(r, sr)
+        s = score(y, x, sr)
+        row = {"ref": ref.stem, "method": m, "params": param_count(r), "exact": s["exact"], "invariant": s["invariant"],
+               "invErrors": s["invariantErrors"], "lines": s["lines"], "linesW": s["linesW"], "floorDb": s["floorDb"], "seconds": round(time.time() - t0, 2)}
+        rows.append(row); print(json.dumps(row), flush=True)
+        sf.write(out / f"{ref.stem}__{m}.wav", y.astype(np.float32), sr)
+        (out / f"{ref.stem}__{m}.recipe.json").write_text(json.dumps(r))
+json.dump(rows, open(out / "results.json", "w"), indent=1)
+print("\nmethod     mean_inv  min_inv  mean_exact  lines  linesW  floorDb  params")
+for m in a.methods.split(","):
+    rr = [r for r in rows if r["method"] == m]
+    print(f"{m:10} {np.mean([r['invariant'] for r in rr]):8.2f} {np.min([r['invariant'] for r in rr]):8.2f} {np.mean([r['exact'] for r in rr]):10.2f} {np.mean([r['lines'] for r in rr]):6.1f} {np.mean([r['linesW'] for r in rr]):7.1f} {np.median([r['floorDb'] for r in rr]):7.1f} {np.mean([r['params'] for r in rr]):8.0f}")

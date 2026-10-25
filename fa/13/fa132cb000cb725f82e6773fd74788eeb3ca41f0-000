@@ -1,0 +1,123 @@
+<!doctype html>
+<!-- 25 October 2026 23:55: ZenRay SFX listening proof, filled by Scripts/ListenSheet.py (audio, images and fonts
+     embedded, so the page opens with no server). FR : page d'écoute de la preuve, autonome. -->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZenRay SFX, écoute</title>
+<style>
+@font-face { font-family: 'InterVariable'; src: url(data:font/woff2;base64,__INTER__) format('woff2'); font-weight: 100 900; }
+@font-face { font-family: 'AnthropicSerif'; src: url(data:font/woff2;base64,__SERIF__) format('woff2'); font-weight: 400; }
+@font-face { font-family: 'GTSectraLCG'; src: url(data:font/woff2;base64,__SECTRA__) format('woff2'); font-style: italic; font-weight: 400; }
+:root {
+  --zr-police-sans: 'InterVariable', 'Hiragino Sans W4', sans-serif;
+  --zr-police-serif: 'AnthropicSerif', serif;
+  --zr-police-titres: 'GTSectraLCG', 'AnthropicSerif', serif;
+  --bg: #f6f5f2; --panel: #ffffff; --ink: #1d1c1a; --muted: #6f6c66; --line: #e4e1da; --chip: #f0ede6; --accent: #cc7c5e;
+  --good: #3f8a5a; --bad: #b04a3a; --radius: 14px; --gap: 16px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #161614; --panel: #201f1d; --ink: #ecebe7; --muted: #9c988f; --line: #34322e; --chip: #2a2926; } }
+:root[data-theme="dark"] { --bg: #161614; --panel: #201f1d; --ink: #ecebe7; --muted: #9c988f; --line: #34322e; --chip: #2a2926; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--zr-police-sans); font-size: 14px; }
+.wrap { max-width: 1640px; margin: 0 auto; padding: 24px 16px 60px; }
+h1, h2 { font-family: var(--zr-police-titres); font-style: italic; font-weight: 400; margin: 0; }
+h1 { font-size: 32px; } h2 { font-size: 22px; }
+.num { font-family: var(--zr-police-serif); font-style: normal; }
+.lead { color: var(--muted); max-width: 900px; line-height: 1.55; margin: 10px 0 20px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin-bottom: var(--gap); }
+.head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.chip { background: var(--chip); border-radius: 999px; padding: 3px 9px; font-size: 12px; color: var(--muted); }
+.chip .num { color: var(--ink); }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+@media (max-width: 900px) { .pair { grid-template-columns: 1fr; } }
+.side b { display: block; margin-bottom: 6px; }
+.side img { width: 100%; height: auto; aspect-ratio: 760 / 220; border-radius: 8px; display: block; background: #000; }
+audio { width: 100%; margin-top: 6px; }
+.tools { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+@media (max-width: 900px) { .tools { grid-template-columns: 1fr; } }
+button { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 7px 12px; border-radius: 999px; cursor: pointer; }
+button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+.reveal { margin-top: 8px; min-height: 20px; }
+.ok { color: var(--good); } .ko { color: var(--bad); }
+textarea { width: 100%; min-height: 54px; font: inherit; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 8px; margin-top: 8px; }
+.hint { color: var(--muted); font-size: 12px; }
+.bar { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 10px 0; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ZenRay SFX, écoute</h1>
+  <p class="lead">Pour chaque son, à gauche la référence Death Stranding, à droite la reproduction rendue depuis la seule recette, avec un tirage de bruit que l'ajustement n'a jamais vu. Les niveaux ne sont pas retouchés. Les deux signatures visuelles utilisent la même échelle. Le test à l'aveugle cache dans X l'un des deux sons ; ton oreille dit lequel. Source : <span class="num">__RUN__</span>.</p>
+  <div class="bar">
+    <button id="copy">Copier mes verdicts</button>
+    <span class="hint" id="state">Verdicts gardés dans ce navigateur.</span>
+  </div>
+  <div id="list"></div>
+</div>
+<script>
+// 25 October 2026 23:55: data embedded by Scripts/ListenSheet.py; verdicts kept in localStorage (convenience only).
+const DATA = __DATA__;
+const KEY = "zenray-sfx-listen-" + "__RUN__";
+let V = {}; try { V = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { V = {}; }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(V)); } catch (e) {} };
+const src = (b) => "data:audio/flac;base64," + b;
+const num = (v) => `<span class="num">${v}</span>`;
+
+document.getElementById("list").innerHTML = DATA.map((d, i) => `
+  <section class="card" id="c${i}">
+    <div class="head"><h2>${d.name}</h2>
+      <span class="chip">invariant ${num(d.score.heldInvariant)}</span><span class="chip">plafond ${num(d.score.ceiling)}</span>
+      <span class="chip">lignes ${num(d.score.linesW)}</span><span class="chip">excès ${num(d.score.excessPct)} %</span>
+      <span class="chip">${num(d.score.params)} nombres</span></div>
+    <div class="pair">
+      <div class="side"><b>Référence</b><img src="data:image/png;base64,${d.refPng}" alt=""><audio controls preload="auto" src="${src(d.ref)}" data-role="ref"></audio></div>
+      <div class="side"><b>Reproduction ZenRay SFX</b><img src="data:image/png;base64,${d.repPng}" alt=""><audio controls preload="auto" src="${src(d.rep)}" data-role="rep"></audio></div>
+    </div>
+    <div class="row"><button data-ab="${i}">Écouter la référence puis la reproduction</button></div>
+    <div class="tools">
+      <div><b>À l'aveugle</b>
+        <audio controls preload="auto" src="${src(d.x)}"></audio>
+        <div class="row"><button data-guess="${i}" data-v="ref">X est la référence</button><button data-guess="${i}" data-v="rep">X est la reproduction</button></div>
+        <div class="reveal" id="rv${i}"></div></div>
+      <div><b>Ton verdict</b>
+        <div class="row">${["Parfait", "Presque", "Différent"].map(v => `<button data-verdict="${i}" data-v="${v}">${v}</button>`).join("")}</div>
+        <textarea data-note="${i}" placeholder="Ce que tu entends de différent (attaque, aigus, queue, souffle…)"></textarea></div>
+    </div>
+  </section>`).join("");
+
+function paint(i) {
+  const v = V[DATA[i].name] || {};
+  document.querySelectorAll(`[data-verdict="${i}"]`).forEach(b => b.classList.toggle("on", b.dataset.v === v.verdict));
+  const t = document.querySelector(`[data-note="${i}"]`); if (t && v.note != null && t.value !== v.note) t.value = v.note;
+  if (v.guess) {
+    const right = v.guess === DATA[i].xIs;
+    document.getElementById("rv" + i).innerHTML = `<span class="${right ? "ok" : "ko"}">${right ? "Trouvé" : "Raté"} : X était ${DATA[i].xIs === "ref" ? "la référence" : "la reproduction"}.</span>`;
+  }
+}
+DATA.forEach((_, i) => paint(i));
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.verdict != null) { const n = DATA[+b.dataset.verdict].name; V[n] = { ...(V[n] || {}), verdict: b.dataset.v }; save(); paint(+b.dataset.verdict); }
+  if (b.dataset.guess != null) { const n = DATA[+b.dataset.guess].name; V[n] = { ...(V[n] || {}), guess: b.dataset.v }; save(); paint(+b.dataset.guess); }
+  if (b.dataset.ab != null) {
+    const card = document.getElementById("c" + b.dataset.ab);
+    const [r, p] = [card.querySelector('[data-role="ref"]'), card.querySelector('[data-role="rep"]')];
+    document.querySelectorAll("audio").forEach(a => a.pause());
+    r.currentTime = 0; r.play(); r.onended = () => { setTimeout(() => { p.currentTime = 0; p.play(); }, 400); r.onended = null; };
+  }
+});
+document.addEventListener("input", (e) => {
+  if (e.target.dataset.note != null) { const n = DATA[+e.target.dataset.note].name; V[n] = { ...(V[n] || {}), note: e.target.value }; save(); }
+});
+document.getElementById("copy").onclick = async () => {
+  const lines = DATA.map(d => { const v = V[d.name] || {}; return `${d.name} : ${v.verdict || "sans verdict"}${v.guess ? ` (aveugle : ${v.guess === d.xIs ? "trouvé" : "raté"})` : ""}${v.note ? `, ${v.note}` : ""}`; });
+  const txt = "Verdicts ZenRay SFX (__RUN__)\n" + lines.join("\n");
+  try { await navigator.clipboard.writeText(txt); document.getElementById("state").textContent = "Verdicts copiés, colle-les dans la conversation."; }
+  catch (e) { document.getElementById("state").textContent = "Copie refusée : " + e.message; }
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+# 25 October 2026 16:50: the full ZenRay SFX reproduction of one or many references.
+# analyse -> polish (rotating seeds) -> judge on held-out seeds -> identity ceiling -> gate (held-out >= ceiling - 0.3).
+# Writes out/<run>/<name>.recipe.json, <name>.wav (seed 7), and results.json. FR : reproduction complète, avec porte.
+import sys, json, time, argparse, glob; from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import numpy as np, soundfile as sf
+from zrsfx.analyze import analyze, param_count
+from zrsfx.render import render
+from zrsfx.polish import polish
+from zrsfx.score import score
+from zrsfx import methods
+
+ap = argparse.ArgumentParser()
+ap.add_argument("refs", nargs="+"); ap.add_argument("--method", default=methods.DEFAULT)
+ap.add_argument("--run", default="reproduce"); ap.add_argument("--steps", type=int, default=150)
+a = ap.parse_args()
+out = Path("out") / a.run; out.mkdir(parents=True, exist_ok=True)
+rows = []
+for ref in [p for g in a.refs for p in sorted(glob.glob(g))]:
+    name = Path(ref).stem; x, sr = sf.read(ref); t0 = time.time()
+    r = analyze(x, sr, name=name, **methods.METHODS[a.method])
+    if a.steps:
+        r = polish(r, x, sr, steps=a.steps)
+    held = [score(render(r, sr, seed=k), x, sr) for k in (7, 8, 9)]
+    ceil = [score(render(r, sr, seed=p), render(r, sr, seed=q), sr)["invariant"] for p, q in ((1, 2), (3, 4), (5, 6))]
+    row = {"ref": name, "method": a.method, "params": param_count(r),
+           "lines": round(float(np.mean([h["lines"] for h in held])), 2),
+           "linesW": round(float(np.mean([h["linesW"] for h in held])), 2),
+           "floorDb": round(float(np.mean([h["floorDb"] for h in held])), 2),
+           "excessPct": round(float(np.mean([h["excessPct"] for h in held])), 2),
+           "heldInvariant": round(float(np.mean([h["invariant"] for h in held])), 2),
+           "heldExact": round(float(np.mean([h["exact"] for h in held])), 2),
+           "ceiling": round(float(np.mean(ceil)), 2), "seconds": round(time.time() - t0, 1)}
+    row["gap"] = round(row["ceiling"] - row["heldInvariant"], 2)
+    row["atCeiling"] = row["gap"] <= 0.3
+    rows.append(row); print(json.dumps(row), flush=True)
+    (out / f"{name}.recipe.json").write_text(json.dumps(r))
+    sf.write(out / f"{name}.wav", render(r, sr, seed=7).astype(np.float32), sr)
+json.dump(rows, open(out / "results.json", "w"), indent=1)
+print("mean held-out invariant", round(float(np.mean([r["heldInvariant"] for r in rows])), 2),
+      "| linesW", round(float(np.mean([r["linesW"] for r in rows])), 1), "| floorDb", round(float(np.mean([r["floorDb"] for r in rows])), 1),
+      "| excessPct", round(float(np.mean([r["excessPct"] for r in rows])), 2),
+      "| at ceiling", sum(r["atCeiling"] for r in rows), "/", len(rows))

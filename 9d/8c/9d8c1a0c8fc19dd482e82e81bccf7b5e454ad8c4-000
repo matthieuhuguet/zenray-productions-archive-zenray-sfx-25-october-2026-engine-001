@@ -1,0 +1,27 @@
+# ZenRay SFX, suivi du chantier (25 October 2026)
+
+## Objectif, dans les mots de Matthieu (25 October 2026)
+
+« Créer à partir soit d'une base existante, soit d'une description texte très précise, directement un SFX », avec « un algorithme ou un software qui n'aurait pas besoin d'AI », « d'abord trouver la méthodologie parfaite, et puis itérer sur le logiciel jusqu'à ce que le résultat soit parfait pour mon oreille ». Qualité AAA, « peu importe le style ». Deux cas : un SFX approximatif (vidéo YouTube) à nettoyer complètement, et une description (« dans Elden Ring, quand tu ouvres un coffre ») dont l'algorithme tire le son ; trois propositions comme dans ZenRay Edit ; reprendre le travail de ZenRay Motion ; 4 à 7 sons, itérations en puissances de 2 ; trouver le descriptif texte qui mène au résultat audio. Assets cloud dans un deuxième temps. (25 October 2026)
+
+## Prompts (25 October 2026)
+
+- 25 October 2026 : prompt initial ci-dessus, avec /dont-stop.
+
+## Preuves et décisions (25 October 2026)
+
+- Banc : six sons Death Stranding (références locales, hors git). Méthode retenue P256G32aEM + polissage : 99,35 invariant sur graines neuves, 6 sur 6 au plafond. Détail : docs/METHOD.md. (25 October 2026)
+- Texte court (16 lignes) : 82 à 92 ; texte long (la recette écrite, 226 à 293 lignes) : identique au bit près. (25 October 2026)
+- Non vérifié : l'écoute de Matthieu, la qualité « AAA » des archétypes sans référence. (25 October 2026)
+
+## 25 October 2026 : preuve d'écoute avant verdict
+
+- 25 October 2026, prompt : « démontre-moi d'abord que la reproduction sonore était parfaite avec les sons de Death Stranding ; je compare chaque son et ensuite je te donne mon verdict ; la sheet avec les deux images sonores comme signature visuelle ; consigne cette instruction pour le debug. »
+- Règle (25 October 2026) : chaque boucle se clôt par `Scripts/ListenSheet.py` (page d'écoute autonome et planche des signatures), envoyées à Matthieu ; son verdict à l'oreille fait foi. Consignée dans le skill zenray-sfx.
+- Livré (25 October 2026) : out/listen-01/listen.html et out/listen-01/signatures.png, depuis out/repro-03.
+
+## 26 October 2026 : édition sémantique
+
+- 25 October 2026, prompt : « Note cette distinction de vocabulaire dans Claude.md, dans les sections HDA ; consigne exactement ce que tu viens de me dire ; ensuite on crée l'édition sémantique pour ZRSFX, et tu ne t'arrêtes pas tant que tu n'as pas fini. »
+- Fait (26 October 2026) : doctrine dans `~/.claude/CLAUDE.md` et `rules/ParametricHda1.md` ; `zrsfx/semantic.py` (couches de métier, curseurs, mesure), onglet « Éditer » de l'app, versions V_###, preuves vertes et rouge, preuve d'écoute `out/semantic-demo-01`.
+- Non vérifié (26 October 2026) : ton écoute des retouches.

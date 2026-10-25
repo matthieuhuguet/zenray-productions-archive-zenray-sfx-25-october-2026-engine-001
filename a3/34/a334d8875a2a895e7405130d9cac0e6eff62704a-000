@@ -1,0 +1,73 @@
+# 25 October 2026 23:50: the listening proof. One self-contained HTML page (fonts, audio as lossless FLAC and
+# spectrograms embedded, opens anywhere, no server) plus a PNG sheet: for every sound, the reference and the
+# reproduction side by side, two signatures (mel spectrograms on the same scale), the scores, and a blind A/B test
+# (X is secretly the reference or the reproduction). Levels are untouched so the comparison is fair.
+# FR : la preuve d'écoute, page autonome et planche, référence et reproduction côte à côte, test à l'aveugle.
+import argparse, base64, io, json, sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+import numpy as np, soundfile as sf, librosa
+from PIL import Image, ImageDraw
+
+FONTS = Path("/Users/zenray/.claude/skills/zenray-edit/designs/_shared/fonts")
+SPEC = {"nFft": 2048, "hop": 128, "mels": 160, "rangeDb": 90, "width": 760, "height": 220}
+
+
+def spec_img(y, sr):
+    M = librosa.power_to_db(librosa.feature.melspectrogram(y=np.asarray(y, np.float32), sr=sr, n_fft=SPEC["nFft"],
+                                                           hop_length=SPEC["hop"], n_mels=SPEC["mels"]), ref=1.0)
+    a = np.clip((M + SPEC["rangeDb"]) / SPEC["rangeDb"], 0, 1)[::-1]
+    return Image.fromarray((np.stack([a ** 0.6, a ** 1.5, a ** 3], -1) * 255).astype(np.uint8)).resize((SPEC["width"], SPEC["height"]))
+
+
+def b64(data):
+    return base64.b64encode(data).decode()
+
+
+def png_b64(img):
+    buf = io.BytesIO(); img.save(buf, "PNG"); return b64(buf.getvalue())
+
+
+def flac_b64(y, sr):
+    buf = io.BytesIO(); sf.write(buf, np.clip(y, -1, 1), sr, format="FLAC", subtype="PCM_24"); return b64(buf.getvalue())
+
+
+def main():
+    ap = argparse.ArgumentParser(); ap.add_argument("--run", default="out/repro-03"); ap.add_argument("--out", default="out/listen-01")
+    a = ap.parse_args()
+    run, out = ROOT / a.run, ROOT / a.out
+    out.mkdir(parents=True, exist_ok=True)
+    rows = json.load(open(run / "results.json"))
+    rng = np.random.default_rng(int(sum(map(ord, a.run))))
+    items, sheet_rows = [], []
+    for r in rows:
+        x, sr = sf.read(ROOT / "refs" / f"{r['ref']}.wav"); y, _ = sf.read(run / f"{r['ref']}.wav")
+        y = y[:len(x)]
+        ix, iy = spec_img(x, sr), spec_img(y, sr)
+        secret = bool(rng.integers(2))  # True: X is the reproduction
+        items.append({"name": r["ref"], "ref": flac_b64(x, sr), "rep": flac_b64(y, sr), "x": flac_b64(y if secret else x, sr),
+                      "xIs": "rep" if secret else "ref", "refPng": png_b64(ix), "repPng": png_b64(iy),
+                      "score": {k: r[k] for k in ("heldInvariant", "ceiling", "linesW", "excessPct", "params")}})
+        sheet_rows.append((r, ix, iy))
+    # PNG sheet: the two signatures of every sound, same scale.
+    W, H = SPEC["width"], SPEC["height"]
+    sheet = Image.new("RGB", (2 * W + 30, len(sheet_rows) * (H + 26) + 34), "white"); d = ImageDraw.Draw(sheet)
+    d.text((10, 10), "Reference (left)  |  ZenRay SFX reproduction from the recipe alone, unseen noise seed (right)", fill="black")
+    for i, (r, ix, iy) in enumerate(sheet_rows):
+        y0 = 34 + i * (H + 26)
+        d.text((10, y0), f"{r['ref']}   invariant {r['heldInvariant']}  ceiling {r['ceiling']}  lines {r['linesW']}  excess {r['excessPct']} %", fill="black")
+        sheet.paste(ix, (10, y0 + 14)); sheet.paste(iy, (20 + W, y0 + 14))
+    sheet.save(out / "signatures.png")
+    font = lambda f: b64((FONTS / f).read_bytes())
+    html = (ROOT / "app/listen.template.html").read_text()
+    html = html.replace("__DATA__", json.dumps(items)).replace("__INTER__", font("InterVariable-latin.woff2")) \
+               .replace("__SERIF__", font("AnthropicSerif-Romans-latin-400.woff2")).replace("__SECTRA__", font("GT-Sectra-LCGV-Regular-Italic.woff2")) \
+               .replace("__RUN__", a.run)
+    (out / "listen.html").write_text(html)
+    print(out / "listen.html", f"{(out / 'listen.html').stat().st_size / 1e6:.1f} MB"); print(out / "signatures.png")
+
+
+if __name__ == "__main__":
+    main()

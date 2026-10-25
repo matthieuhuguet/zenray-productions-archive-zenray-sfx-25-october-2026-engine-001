@@ -1,0 +1,38 @@
+# 25 October 2026 19:45: fit a text brief to references, then judge the TEXT: parse the printed text, render it on
+# held-out seeds, score with every reading. Writes out/<run>/<name>.brief.txt, .wav, results.json.
+# FR : ajuste un brief texte, puis juge le TEXTE relu, rendu sur des graines neuves.
+import sys, json, time, argparse, glob; from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import numpy as np, soundfile as sf
+from zrsfx import brief as B, brieffit as F
+from zrsfx.score import score
+ap = argparse.ArgumentParser(); ap.add_argument("refs", nargs="+")
+ap.add_argument("--events", type=int, default=8); ap.add_argument("--passes", type=int, default=2)
+ap.add_argument("--gens", type=int, default=30); ap.add_argument("--run", default="brief")
+ap.add_argument("--dictionary", help="run folder holding the detailed recipes to distil candidates from")
+a = ap.parse_args()
+out = Path("out") / a.run; out.mkdir(parents=True, exist_ok=True); rows = []
+if __name__ == "__main__":
+    for ref in [p for g in a.refs for p in sorted(glob.glob(g))]:
+        name = Path(ref).stem; x, sr = sf.read(ref); t0 = time.time()
+        if a.dictionary:
+            rec = json.load(open(Path(a.dictionary) / f"{name}.recipe.json"))
+            br, hist = F.fit_dictionary(x, sr, rec, events=a.events, gens=a.gens, name=name)
+        else:
+            br, hist = F.fit_pursuit(x, sr, events=a.events, gens=a.gens, name=name, log=lambda m: None)
+        ladder = {}
+        for h in hist:  # the text ladder: score of the first k lines (one held-out seed, fast)
+            if len(h["events"]) in (1, 2, 4, 8, 16, 32):
+                ladder[len(h["events"])] = round(score(B.render(B.from_text(B.to_text(h)), sr, seed=7), x, sr)["invariant"], 2)
+        text = B.to_text(br); (out / f"{name}.brief.txt").write_text(text + "\n")
+        br2 = B.from_text(text)  # judge what the text says, not the fitter's floats
+        held = [score(B.render(br2, sr, seed=k), x, sr) for k in (7, 8, 9)]
+        row = {"ref": name, "events": len(br2["events"]), "numbers": B.count(br2), "words": len(text.split()),
+               "heldInvariant": round(float(np.mean([h["invariant"] for h in held])), 2),
+               "linesW": round(float(np.mean([h["linesW"] for h in held])), 1),
+               "excessPct": round(float(np.mean([h["excessPct"] for h in held])), 2), "ladder": ladder, "seconds": round(time.time() - t0)}
+        rows.append(row); print(json.dumps(row), flush=True)
+        sf.write(out / f"{name}.wav", B.render(br2, sr, seed=7).astype(np.float32), sr)
+    json.dump(rows, open(out / "results.json", "w"), indent=1)
+    print("mean held-out invariant", round(float(np.mean([r["heldInvariant"] for r in rows])), 2),
+          "| linesW", round(float(np.mean([r["linesW"] for r in rows])), 1), "| numbers", round(float(np.mean([r["numbers"] for r in rows]))))

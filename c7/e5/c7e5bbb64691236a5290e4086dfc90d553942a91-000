@@ -1,0 +1,11 @@
+# 25 October 2026 16:45: identity ceiling of a recipe = the same recipe, two noise seeds, judged against each other.
+# A resynthesis cannot be expected to beat this against a reference that is itself one draw.
+# FR : plafond d'identité, la même recette avec deux graines jugée contre elle-même.
+import sys, json, glob; sys.path.insert(0, ".")
+import numpy as np
+from zrsfx.render import render
+from zrsfx.score import score
+for f in sorted(glob.glob(sys.argv[1])):
+    r = json.load(open(f))
+    v = [score(render(r, seed=a), render(r, seed=b), 48000)["invariant"] for a, b in ((1, 2), (3, 4), (5, 6))]
+    print(f.split("/")[-1][:40].ljust(40), round(float(np.mean(v)), 2), v)

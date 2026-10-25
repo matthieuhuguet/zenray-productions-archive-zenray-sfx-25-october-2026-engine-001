@@ -1,0 +1,88 @@
+# ZenRay SFX, la méthode (25 October 2026)
+
+ZenRay SFX reproduit un effet sonore sans intelligence artificielle et sans dépendance payante : un son devient une **recette** (des nombres lisibles, aucun échantillon de la référence), puis un **texte** (un brief en anglais contrôlé, exact dans les deux sens), et l'un comme l'autre se rejouent, se modifient par des **macros** et se déclinent en **trois propositions**. La méthode reprend la démarche de ZenRay Height et ZenRay UV, mesure d'abord, méthode ensuite, et la perte perceptive de ZenRay Motion Design comme juge externe. (25 October 2026)
+
+## Les quatre cas d'usage et leur chemin (25 October 2026)
+
+| Cas | Entrée | Chemin | Commande |
+|---|---|---|---|
+| Reproduire à l'identique | un WAV propre | analyse, polissage, recette | `python3 Scripts/Reproduce.py "refs/*.wav" --run <run>` |
+| Nettoyer un son sale | un extrait YouTube, un enregistrement | nettoyage, puis le chemin ci-dessus | `zrsfx.clean.clean`, preuve `Scripts/CleanTest.py` |
+| Écrire le texte d'un son | un WAV | poursuite d'événements, texte | `python3 Scripts/FitBrief.py "refs/*.wav" --events 16` |
+| Créer depuis une description | « quand tu ouvres un coffre dans Elden Ring » | scènes, archétypes, macros, trois propositions | onglet « Depuis un texte » de l'app |
+
+App : `python3 Scripts/App.py`, puis http://127.0.0.1:3120 (configuration `zenray-sfx` du `launch.json` de Memory1). (25 October 2026)
+
+## Le juge, et pourquoi il a cinq lectures (25 October 2026)
+
+1. **invariant** : la perte perceptive de ZenRay Motion Design dans sa variante invariante à la graine (spectres attendus) ; `100 × 0,99^(E²)`, donc 99 signifie une erreur d'un seuil différentiel. C'est la lecture principale. (25 October 2026)
+2. **exact** : la même perte cellule par cellule ; un bruit ne la dépasse jamais contre un autre bruit, elle est rapportée, jamais une porte. (25 October 2026)
+3. **plafond** : la même recette rendue avec deux graines, jugée contre elle-même. Une reproduction ne peut pas battre ce plafond contre une référence qui est elle-même un tirage ; il vaut de 97,4 à 99,5 selon le son. La porte est donc « au plafond » (écart ≤ 0,3), pas un 99 fixe. (25 October 2026)
+4. **lignes** : la mesure F des lignes tonales persistantes (rappel et précision, pondérés par le niveau). Ajoutée parce que la planche montrait des lignes floues alors que la note invariante disait 98. Sa première version était aveugle (le bruit fabriquait ses propres pics) ; la version persistante sépare bien les cas. (25 October 2026)
+5. **excès** : la part des cellules audibles où l'on dépasse la référence de plus de 10 dB (taches, souffle ajouté). 0 sur un son contre lui-même. (25 October 2026)
+
+Toute note se lit sur des **graines de bruit jamais vues** pendant l'ajustement (7, 8, 9) : sans cette règle, le polissage apprenait le tirage du bruit (99,2 vu, 97,2 neuf). (25 October 2026)
+
+## La recette d'identité, ce qui a été essayé et mesuré (25 October 2026)
+
+Banc : six sons de Death Stranding (Denied, TimeFall Shelter, Cufflinks Open, Mail Open, Inv Close End, Awaiting Signal), moyennes sur les six. Noms de méthode : P = partiels, G = grille de bruit (bandes), a = images clés adaptatives, E = courbe de gain fine du bruit, M = porte maîtresse. (25 October 2026)
+
+| Méthode | Invariant | Lignes pondérées | Nombres | Verdict |
+|---|---|---|---|---|
+| G08u, grille 8 × 8 | 78,7 | 3 | 72 | trop pauvre |
+| G32u | 95,0 | 3 | 1 056 | le bruit seul plafonne |
+| P16G32a | 97,2 | 54 | 1 270 | les partiels valent une grille quatre fois plus fine |
+| P32G32aE | 98,1 | 54 | 1 874 | l'enveloppe fine aide |
+| P256G32aE | 98,2 | 64 | 4 275 | lignes meilleures, pré-écho de 70 dB |
+| P256G32aEM (porte) | 98,5 | 70 | 4 306 | pré-écho fermé |
+| **P256G32aEM + polissage** | **99,35** | **75** | **≈ 4 300** | **6 sons sur 6 au plafond** |
+
+Échecs instructifs, chacun mesuré : (1) le polissage qui déplace les fréquences détruit les lignes (rappel de 50 % à 3 %), d'où des fréquences figées ; (2) une enveloppe fine non lissée recopie le tirage de bruit de la référence et floute les lignes par modulation (rappel 5 %), d'où une porte qui ne fait qu'atténuer, au-delà de 3 dB, avec un filtre médian ; (3) la démodulation hétérodyne des partiels donne plus de nombres et un moins bon résultat ; (4) une pénalité d'excès dans le polissage fait passer les taches de 6 % à 0,19 % sans rien coûter ailleurs. (25 October 2026)
+
+## Le texte, ce qui a été essayé et mesuré (25 October 2026)
+
+Le brief décrit un son en événements : un ton (fondamentale, glissando, liste des partiels présents avec leur niveau) et/ou un souffle (couleur sur dix octaves, glissement), une enveloppe en au plus huit points. `brief.to_text` et `brief.from_text` font l'aller-retour à l'identique, et une ligne mal écrite est refusée (`Scripts/CheckBriefText.py`, vert et rouge). (25 October 2026)
+
+| Méthode d'ajustement du texte | Denied | TimeFall | Remarque |
+|---|---|---|---|
+| événements aux attaques détectées | 80,9 | | trois attaques seulement |
+| poursuite (une couche à la fois, là où il manque le plus) | 87,7 | 91,8 | retenue |
+| distillation de la recette (familles harmoniques, NMF) | ≤ 80 | ≤ 65 | conversion trop perdante |
+| distillation puis correction CMA | 88,9 | 81,8 | |
+| poursuite sur dictionnaire distillé | 80,2 | 84,4 | |
+
+Mesure sur les six sons (`out/brief-05`) : 91,5 / 82,4 / 91,8 / 94,2 / 84,1 / 90,1, moyenne 89,0 en environ 155 nombres. Conclusion : un texte court de 16 lignes rend le caractère d'un son de menu Death Stranding, pas son identité ; l'identité demande la recette (≈ 4 300 nombres, elle aussi lisible). Le **texte long** (`zrsfx/recipetext.py`) écrit la recette d'identité en 226 à 293 lignes lisibles (une par partiel, une par bande de souffle) ; relu, il rend le même son au bit près (`Scripts/CheckRecipeText.py`, vert sur les six, rouge sur une ligne abîmée). (25 October 2026)
+
+## Le son sale (25 October 2026)
+
+`Scripts/CleanTest.py` abîme chaque référence (0,3 s de marge, petite pièce au son direct 12 dB au-dessus de la queue, souffle à -40 dB sous le son, MP3 64 kbit/s), la nettoie (`zrsfx/clean.py` : bruit stationnaire estimé sur les 15 % de trames les plus calmes, gain lissé, découpe), la reproduit, puis juge contre l'original propre. Résultats (`out/clean-02/results.json`, moyennes sur six, contre l'original propre) : son sale 99,21, nettoyé 99,64, reconstruit depuis le sale 98,39 (contre 99,35 depuis le propre) ; le souffle des silences passe de +31 dB en moyenne à environ +16 dB. Lecture honnête : sur une dégradation légère, le nettoyage seul est meilleur que la reconstruction ; la reconstruction sert quand on veut une recette modifiable. Première version du test abandonnée : sa « petite pièce » avait une queue 8 dB au-dessus du son direct, et cette seule dégradation faisait 35,9. (25 October 2026) Limite connue : une musique de fond n'est pas un bruit stationnaire et n'est pas retirée par cette étape. (25 October 2026)
+
+## Créer depuis une description, sans référence (25 October 2026)
+
+`params/archetypes.json` porte des archétypes au format brief (loquet, grincement de bois, couinement de charnière, choc de bois, choc métallique, poussière, scintillement de trésor, souffle d'arme, impact lourd, validation, refus), écrits depuis la pratique du sound design (attaque, corps, queue, détail) et jamais depuis l'audio d'un jeu ; `params/scenes.json` relie des mots à des scènes ordonnées (ouvrir un coffre, une porte, un coup d'épée) ; `params/macros.json` porte les sept macros et les trois propositions. Modifier un nombre dans ces fichiers change tous les sons qui l'utilisent. (25 October 2026)
+
+Limite dite franchement : ces archétypes sont des points de départ synthétiques ; leur qualité « AAA » n'est pas mesurée, faute de référence. La boucle juste est de donner un extrait du son visé (même sale), de le reproduire, puis de transformer sa recette par les macros. (25 October 2026)
+
+## L'édition sémantique, le troisième étage (26 October 2026)
+
+Les trois étages, au sens de Houdini (doctrine `rules/ParametricHda1.md`, section du 25 October 2026) : la recette est **paramétrique** (environ 4 300 nombres bruts), son rendu est **procédural** (recalculé à chaque fois), et l'édition **sémantique** ajoute l'interface d'un HDA : quelques composants nommés et, pour chacun, des curseurs qui ont un sens pour l'oreille, chaque curseur pilotant d'un coup des centaines de nombres. (26 October 2026)
+
+**Découpage retenu, en couches de métier** (`zrsfx/semantic.py`, `decompose_layers`) : le souffle est coupé par des masques lisses qui somment à un en **Attaque** (25 ms après chaque attaque détectée), **Corps grave** (sous 220 Hz) et **Souffle** ou **Queue de souffle** ; les partiels sont d'abord réunis en **lignes** (fragments d'une même ligne spectrale, 40 cents, 15 ms), puis en **tons** par instant de départ (40 ms), quatre au plus, nommés par la hauteur du partiel le plus fort et leur instant, **Glissando** s'ils glissent d'un demi-ton ou plus. Paramètres : `params/semantic.json`. (26 October 2026)
+
+**Curseurs de chaque composant** : niveau, hauteur, attaque, queue, brillance, matière (du bois au métal : hauteur, brillance, longueur de queue et écartement des partiels), moment, couper ; plus Solo et Zéro dans l'app. Tous à zéro, la somme des composants EST la recette (écart 10⁻¹² à 10⁻¹⁶, `Scripts/CheckSemantic.py`). (26 October 2026)
+
+**Mesure de l'écart** (`edit_distance`) : niveaux par tiers d'octave lissés, moyenne de quatre tirages de bruit, cellules audibles (au-dessus de 40 Hz, à moins de 40 dB du maximum) ; écart moyen pondéré par l'intensité des cellules, avec les mots imperceptible (sous 1 dB), subtil (sous 3 dB), franc ; le maximum (`peakDb`) sert à la preuve stricte. (26 October 2026)
+
+| Ce qui a été essayé | Mesure | Verdict |
+|---|---|---|
+| Factorisation NMF en 4 composants | chevauchement 9,0 %, 3,8 composants utiles, noms répétés (« Choc médium 1, 2, 3 ») | écartée : pas un découpage de sound designer |
+| Couches de métier | chevauchement 11,8 %, 5,5 composants utiles, noms lisibles, les deux impulsions de Denied trouvées seules | retenue |
+| Audibilité au 95ᵉ centile | « 0 dB » pour +6 dB sur un composant bref | fausse |
+| Audibilité au maximum seul | « 40 dB, franc » pour tout déplacement de hauteur | trop sévère pour l'affichage, gardée pour la preuve |
+| Audibilité moyenne pondérée, quatre tirages | retouches de démonstration entre 1,3 et 6,3 dB | retenue |
+
+**Les preuves, vertes et rouges** (`Scripts/CheckSliders.py`) : pour chaque curseur de chaque composant des six sons, continuité au sens d'une limite (un pas vingt fois plus petit que le pas de test, puis deux cents fois, doit faire tendre l'écart vers zéro, sous 0,5 dB) et effet (une vraie retouche dépasse 1 dB, reste finie). Vert : 0 échec. Rouge : un saut de 3 dB injecté au passage vers le chemin d'édition donne 28 échecs sur Denied. (26 October 2026)
+
+**Pièges payés** (26 October 2026) : (1) la phase d'un partiel repartait de zéro à son début, si bien qu'un pas minuscule changeait les interférences ; elle est maintenant ancrée au pic du composant et lue dans la portée échantillonnée ; (2) les fragments d'une même ligne répartis dans deux composants interféraient entre eux ; ils sont réunis en lignes ; (3) un ton qui partage sa case avec le bruit d'un autre composant change avec le tirage, d'où la moyenne de quatre tirages ; (4) un partiel aigu reste extrêmement sensible à la phase (5 µs, soit 0,08 cycle à 16 kHz, donnent environ 1 dB à -33 dB) : c'est physique, et l'écart s'annule avec le pas ; (5) raccourcir le seul souffle découvre de petits partiels qu'il couvrait, d'où « Plus sec » appliqué à tous les composants.
+
+**Preuve d'écoute** : `/usr/bin/python3 Scripts/SemanticDemo.py` écrit `out/semantic-demo-01/listen.html` (pour chaque son, l'original et trois retouches écrites une seule fois sur les types de composants dans `params/semantic-demo.json` : plus sec, plus métallique, plus lourd) et `signatures.png`. Les versions éditées dans l'app s'enregistrent en `out/semantic/<son>/V_001.json` et `.wav`, jamais écrasées. (26 October 2026)

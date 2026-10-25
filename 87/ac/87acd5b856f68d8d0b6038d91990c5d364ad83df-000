@@ -1,0 +1,19 @@
+# 25 October 2026: proofs of semantic editing. GREEN: all sliders at default -> the sum of the components equals the
+# recipe's render (max sample difference ~ float noise). RED: a real edit moves the sound by more than 1 JND. Also
+# prints the components and their names. FR : preuves de l'édition sémantique, identité et mouvement mesuré.
+import sys, json, glob; sys.path.insert(0, ".")
+import numpy as np
+from zrsfx import semantic as SM
+from zrsfx.render import render
+ok = True
+for f in sorted(glob.glob(sys.argv[1])):
+    r = json.load(open(f)); m = SM.build(r)
+    a, b = render(r, seed=7), SM.render(m, {}, seed=7)
+    d = float(np.abs(a - b[:len(a)]).max() / np.abs(a).max())
+    big = max(m["components"], key=lambda c: c["desc"]["share"])
+    mv = SM.distance(m, {str(big["index"]): {"levelDb": -6}})
+    print(r["name"].ljust(22), f"identity diff {d:.1e}", "| -6 dB on", big["name"], mv)
+    for c in SM.summary(m):
+        print("    ", c)
+    ok &= d < 1e-6 and mv["localDb"] > 1
+sys.exit(0 if ok else 1)

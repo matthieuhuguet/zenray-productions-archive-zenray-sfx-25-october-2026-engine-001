@@ -1,0 +1,357 @@
+<!doctype html>
+<!-- 25 October 2026 22:40: ZenRay SFX app. Reproduce a reference (identity recipe, text brief, dirty -> rebuilt) or
+     describe a sound and get three proposals. Every knob is a macro from params/macros.json. FR : l'app ZenRay SFX. -->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZenRay SFX</title>
+<style>
+@font-face { font-family: 'InterVariable'; src: url('/fonts/InterVariable.woff2') format('woff2'); font-weight: 100 900; }
+@font-face { font-family: 'AnthropicSerif'; src: url('/fonts/AnthropicSerif-Romans.woff2') format('woff2'); font-weight: 300 800; }
+@font-face { font-family: 'GTSectraLCG'; src: url('/fonts/GT-Sectra-LCGV-Regular-Italic.woff2') format('woff2'); font-style: italic; font-weight: 400; }
+:root {
+  --zr-police-sans: 'InterVariable', 'Hiragino Sans W4', sans-serif;
+  --zr-police-serif: 'AnthropicSerif', 'Hiragino Mincho ProN W3', serif;
+  --zr-police-titres: 'GTSectraLCG', 'AnthropicSerif', serif;
+  --zr-police-mono: 'AnthropicMono', ui-monospace, monospace;
+  --zr-poids-sans: 400; --zr-poids-nombres: 400;
+  --bg: #f6f5f2; --panel: #ffffff; --ink: #1d1c1a; --muted: #6f6c66; --line: #e4e1da; --accent: #cc7c5e;
+  --chip: #f0ede6; --good: #3f8a5a; --warn: #b4782e;
+  --radius: 14px; --gap: 16px; --ui: 14px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #161614; --panel: #201f1d; --ink: #ecebe7; --muted: #9c988f; --line: #34322e; --chip: #2a2926; } }
+:root[data-theme="dark"] { --bg: #161614; --panel: #201f1d; --ink: #ecebe7; --muted: #9c988f; --line: #34322e; --chip: #2a2926; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--zr-police-sans); font-weight: var(--zr-poids-sans); font-size: var(--ui); }
+header { display: flex; align-items: center; gap: 24px; padding: 18px 24px; border-bottom: 1px solid var(--line); }
+h1 { font-family: var(--zr-police-titres); font-style: italic; font-weight: 400; font-size: 28px; margin: 0; }
+h2 { font-family: var(--zr-police-titres); font-style: italic; font-weight: 400; font-size: 22px; margin: 0 0 12px; }
+.num { font-family: var(--zr-police-serif); font-style: normal; font-weight: var(--zr-poids-nombres); }
+nav button, .btn { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 8px 14px; border-radius: 999px; cursor: pointer; }
+nav button.on, .btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+main { display: grid; grid-template-columns: 260px 1fr 300px; gap: var(--gap); padding: var(--gap) 24px; }
+main.wide { grid-template-columns: 1fr 300px; }
+@media (max-width: 1100px) { main, main.wide { grid-template-columns: 1fr; } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+.list button { display: flex; justify-content: space-between; width: 100%; text-align: left; font: inherit; color: var(--ink); background: none; border: 0; padding: 10px 8px; border-radius: 10px; cursor: pointer; }
+.list button.on, .list button:hover { background: var(--chip); }
+.row { display: grid; grid-template-columns: 150px 1fr; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.row:last-child { border-bottom: 0; }
+.row .label { color: var(--muted); }
+.row .label b { display: block; color: var(--ink); font-weight: 500; margin-bottom: 4px; }
+.spec { width: 100%; height: 110px; border-radius: 8px; display: block; object-fit: fill; background: #000; cursor: pointer; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.chip { background: var(--chip); border-radius: 999px; padding: 3px 9px; font-size: 12px; color: var(--muted); }
+.chip .num { color: var(--ink); }
+textarea { width: 100%; min-height: 160px; font-family: var(--zr-police-mono); font-size: 12px; line-height: 1.5; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 10px; resize: vertical; }
+textarea.desc { font-family: var(--zr-police-sans); font-size: 15px; min-height: 90px; }
+.slider { margin: 12px 0; }
+.slider label { display: flex; justify-content: space-between; color: var(--muted); }
+.slider input { width: 100%; accent-color: var(--accent); }
+.status { color: var(--muted); min-height: 20px; margin-top: 8px; }
+.status.err { color: #c0392b; }
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 1100px) { .cards { grid-template-columns: 1fr; } }
+.card { border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.hint { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.ecards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 14px; }
+@media (max-width: 1100px) { .ecards { grid-template-columns: 1fr; } }
+.ecard { border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.ecard.muted { opacity: 0.45; }
+.ecard .top { display: flex; align-items: center; gap: 8px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+.ecard .top b { font-weight: 500; }
+.ecard .top .btn { margin-left: auto; padding: 4px 10px; font-size: 12px; }
+.ecard .slider { margin: 8px 0; }
+main.edit { grid-template-columns: 260px 1fr; }
+select.btn { appearance: none; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>ZenRay SFX</h1>
+  <nav><button id="tab-repro" class="on">Reproduire</button> <button id="tab-edit">Éditer</button> <button id="tab-text">Depuis un texte</button></nav>
+  <span class="hint" style="margin-left:auto">Aucune IA : recette, texte et macros, rendus en local.</span>
+</header>
+<main>
+  <section class="panel" id="side">
+    <h2>Sons</h2>
+    <div class="list" id="list"></div>
+    <p class="hint">Note invariante sur des tirages de bruit jamais vus pendant l'ajustement ; le plafond est la note d'une recette contre elle-même.</p>
+  </section>
+
+  <section class="panel" id="center">
+    <div id="view-repro">
+      <h2 id="title">…</h2>
+      <div id="rows"></div>
+      <h2 style="margin-top:20px">Texte du son</h2>
+      <nav style="margin-bottom:8px"><button id="t-short" class="on">Texte court, le caractère</button> <button id="t-long">Texte long, l'identité</button></nav>
+      <textarea id="brief" spellcheck="false"></textarea>
+      <div class="actions"><button class="btn primary" id="render-brief">Rendre le texte</button></div>
+    </div>
+    <div id="view-edit" hidden>
+      <h2 id="e-title">Édition sémantique</h2>
+      <p class="hint">Le son est découpé en composants nommés ; chaque curseur pilote d'un coup des centaines de nombres de la recette. Tous les curseurs à zéro rendent le son d'origine à l'identique. L'écart affiché est mesuré à l'oreille près : imperceptible sous 1 dB, subtil jusqu'à 3 dB, franc au-delà.</p>
+      <div class="row" style="grid-template-columns:150px 1fr"><div class="label"><b>Composants</b>chaque couleur, un composant</div>
+        <div><img class="spec" id="e-map" alt=""><div class="chips" id="e-legend"></div></div></div>
+      <div class="row" id="r-edit" style="grid-template-columns:150px 1fr"><div class="label"><b>Résultat</b>avec tes réglages<div class="chips" id="e-dist"></div></div>
+        <div><img class="spec" alt=""><audio controls preload="none" style="width:100%;margin-top:6px"></audio></div></div>
+      <div class="row" id="r-orig" style="grid-template-columns:150px 1fr"><div class="label"><b>Original</b>tous les curseurs à zéro</div>
+        <div><img class="spec" alt=""><audio controls preload="none" style="width:100%;margin-top:6px"></audio></div></div>
+      <div class="actions">
+        <button class="btn primary" id="e-ab">Écouter l'original puis le résultat</button>
+        <button class="btn" id="e-save">Enregistrer la version</button>
+        <button class="btn" id="e-reset">Tout remettre à zéro</button>
+        <select id="e-versions" class="btn"><option value="">Versions enregistrées</option></select>
+        <button class="btn" id="e-copy">Copier les valeurs pour le prompt</button>
+      </div>
+      <div class="ecards" id="e-cards"></div>
+    </div>
+    <div id="view-text" hidden>
+      <h2>Décris le son</h2>
+      <textarea class="desc" id="desc">Elden Ring, quand tu ouvres un coffre : un son satisfaisant</textarea>
+      <div class="actions"><button class="btn primary" id="propose">Trois propositions</button></div>
+      <p class="hint" id="sources"></p>
+      <div class="cards" id="cards"></div>
+      <h2 style="margin-top:20px">Texte de base</h2>
+      <textarea id="base" spellcheck="false"></textarea>
+      <div class="actions"><button class="btn primary" id="render-base">Rendre avec les macros</button></div>
+      <div id="base-out"></div>
+    </div>
+    <div class="status" id="status"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Macros</h2>
+    <div id="sliders"></div>
+    <div class="actions">
+      <button class="btn" id="reset">Remettre à zéro</button>
+      <button class="btn" id="copy">Copier les valeurs pour le prompt</button>
+    </div>
+    <p class="hint">Les macros s'appliquent à la recette d'identité et au texte. Toucher un curseur relance le rendu.</p>
+  </section>
+</main>
+<script>
+// 25 October 2026 22:40: all state in one object, every value from the server's params (no number written here).
+const S = { lib: null, cur: null, macros: {}, tab: "repro", timer: null, lastText: "" };
+const $ = (id) => document.getElementById(id);
+const status = (m, err) => { $("status").textContent = m || ""; $("status").className = "status" + (err ? " err" : ""); };
+const num = (v) => `<span class="num">${v}</span>`;
+
+async function api(path, body) {
+  const r = await fetch(path, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {});
+  const j = await r.json();
+  if (!r.ok || j.error) throw new Error(j.error || r.statusText);
+  return j;
+}
+const wavUrl = (b64) => URL.createObjectURL(new Blob([Uint8Array.from(atob(b64), c => c.charCodeAt(0))], { type: "audio/wav" }));
+
+function chips(o) {
+  if (!o) return "";
+  const c = [];
+  if (o.invariant != null) c.push(`invariant ${num(o.invariant)}`);
+  if (o.heldInvariant != null) c.push(`invariant ${num(o.heldInvariant)}`);
+  if (o.ceiling != null) c.push(`plafond ${num(o.ceiling)}`);
+  if (o.linesW != null) c.push(`lignes ${num(o.linesW)}`);
+  if (o.excessPct != null) c.push(`excès ${num(o.excessPct)} %`);
+  if (o.numbers != null) c.push(`${num(o.numbers)} nombres`);
+  if (o.params != null) c.push(`${num(o.params)} nombres`);
+  return `<div class="chips">${c.map(x => `<span class="chip">${x}</span>`).join("")}</div>`;
+}
+
+function rowHtml(id, title, sub, extra) {
+  return `<div class="row" id="${id}"><div class="label"><b>${title}</b>${sub || ""}${extra || ""}</div>
+    <div><img class="spec" alt=""><audio controls preload="none" style="width:100%;margin-top:6px"></audio></div></div>`;
+}
+async function fileRow(id, path) {
+  const el = $(id); el.querySelector("audio").src = "/audio?p=" + encodeURIComponent(path);
+  const j = await api("/api/spectrogram?p=" + encodeURIComponent(path)); el.querySelector("img").src = "data:image/png;base64," + j.png;
+}
+function fillRow(id, j) {
+  const el = $(id); el.querySelector("img").src = "data:image/png;base64," + j.png;
+  el.querySelector("audio").src = wavUrl(j.wav);
+  if (j.score) el.querySelector(".label").insertAdjacentHTML("beforeend", "");
+  const sc = el.querySelector(".live"); if (sc) sc.innerHTML = j.score ? chips(j.score) : `<div class="chips"><span class="chip">macros actives, note masquée</span></div>`;
+}
+document.addEventListener("click", (e) => { if (e.target.classList.contains("spec")) e.target.parentElement.querySelector("audio").play(); });
+
+async function load() {
+  S.lib = await api("/api/library");
+  const m = S.lib.macros.macros;
+  $("sliders").innerHTML = Object.entries(m).map(([k, c]) =>
+    `<div class="slider"><label><span>${c.label} <span class="hint">${c.help}</span></span><span class="num" id="v-${k}">${c.default}</span></label>
+     <input type="range" id="s-${k}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.default}"></div>`).join("");
+  Object.keys(m).forEach(k => { S.macros[k] = m[k].default; $("s-" + k).oninput = (e) => { S.macros[k] = +e.target.value; $("v-" + k).textContent = e.target.value; schedule(); }; });
+  $("list").innerHTML = S.lib.items.map((it, i) => `<button data-i="${i}">${it.name}<span class="num">${it.scores.recipe ? it.scores.recipe.heldInvariant : ""}</span></button>`).join("");
+  $("list").querySelectorAll("button").forEach(b => b.onclick = () => pick(+b.dataset.i));
+  pick(0);
+}
+
+async function pick(i) {
+  S.cur = S.lib.items[i];
+  if (S.tab === "edit") { $("list").querySelectorAll("button").forEach(b => b.classList.toggle("on", +b.dataset.i === i)); return openEdit(S.cur.name); }
+  $("list").querySelectorAll("button").forEach(b => b.classList.toggle("on", +b.dataset.i === i));
+  const it = S.cur, sc = it.scores;
+  $("title").textContent = it.name;
+  let h = rowHtml("r-ref", "Référence", "le son de départ");
+  h += rowHtml("r-rec", "Recette d'identité", "analyse puis polissage, rendu depuis la recette seule", `${chips(sc.recipe)}<div class="hint" style="margin-top:6px">rendu actuel :</div><div class="live"></div>`);
+  h += rowHtml("r-brf", "Texte", "le texte ci-dessous, relu puis rendu", `${chips(sc.brief)}<div class="hint" style="margin-top:6px">rendu actuel :</div><div class="live"></div>`);
+  if (it.dirty) {
+    h += rowHtml("r-dirty", "Version sale", "souffle, pièce, MP3 64 kbit/s", chips(sc.clean && { invariant: sc.clean.dirtyVsClean }));
+    h += rowHtml("r-rebuilt", "Reconstruite", "depuis la version sale, jugée contre le propre", chips(sc.clean && { invariant: sc.clean.reproVsClean }));
+  }
+  $("rows").innerHTML = h;
+  S.long = false; $("t-short").classList.add("on"); $("t-long").classList.remove("on");
+  $("brief").value = it.brief || "";
+  fileRow("r-ref", it.ref);
+  if (it.dirty) { fileRow("r-dirty", it.dirty); fileRow("r-rebuilt", it.repro); }
+  renderNow();
+}
+
+function schedule() { clearTimeout(S.timer); S.timer = setTimeout(() => S.tab === "repro" ? renderNow() : renderBase(), 300); }
+async function renderNow() {
+  const it = S.cur; if (!it) return;
+  status("Rendu…");
+  try {
+    if (it.hasRecipe) fillRow("r-rec", await api("/api/render", { kind: "recipe", name: it.name, macros: S.macros, compare: it.name }));
+    if ($("brief").value.trim()) fillRow("r-brf", await api("/api/render", { kind: S.long ? "recipetext" : "brief", text: $("brief").value, macros: S.macros, compare: it.name }));
+    status("");
+  } catch (e) { status(e.message, true); }
+}
+$("render-brief").onclick = renderNow;
+async function textMode(long) {
+  S.long = long; $("t-short").classList.toggle("on", !long); $("t-long").classList.toggle("on", long);
+  $("brief").value = long ? (await api("/api/longtext?name=" + encodeURIComponent(S.cur.name))).text : (S.cur.brief || "");
+  renderNow();
+}
+$("t-short").onclick = () => textMode(false); $("t-long").onclick = () => textMode(true);
+
+async function propose() {
+  status("Composition des trois propositions…");
+  try {
+    const j = await api("/api/describe", { text: $("desc").value, name: "sfx" });
+    $("base").value = j.text;
+    $("sources").textContent = "Archétypes utilisés : " + j.sources.join(", ");
+    $("cards").innerHTML = j.proposals.map((p, i) => `<div class="card"><b>${p.name}</b>
+      <img class="spec" src="data:image/png;base64,${p.png}" style="margin-top:8px"><audio controls style="width:100%;margin-top:6px" src="${wavUrl(p.wav)}"></audio>
+      <div class="actions"><button class="btn" data-k="${i}">Partir de celle-ci</button></div></div>`).join("");
+    $("cards").querySelectorAll("button[data-k]").forEach(b => b.onclick = () => useProposal(j.proposals[+b.dataset.k]));
+    status("");
+  } catch (e) { status(e.message, true); }
+}
+function setMacros(m) {
+  const all = S.lib.macros.macros;
+  Object.keys(all).forEach(k => { const v = m[k] ?? all[k].default; S.macros[k] = v; $("s-" + k).value = v; $("v-" + k).textContent = v; });
+}
+function useProposal(p) { setMacros(p.macros); renderBase(); }
+async function renderBase() {
+  status("Rendu…");
+  try {
+    const j = await api("/api/render", { kind: "brief", text: $("base").value, macros: S.macros });
+    $("base-out").innerHTML = `<div class="row" id="r-base"><div class="label"><b>Rendu</b><span class="num">${j.seconds}</span> s</div><div><img class="spec"><audio controls style="width:100%;margin-top:6px"></audio></div></div>`;
+    fillRow("r-base", j); status("");
+  } catch (e) { status(e.message, true); }
+}
+$("propose").onclick = propose; $("render-base").onclick = renderBase;
+$("reset").onclick = () => { setMacros({}); schedule(); };
+$("copy").onclick = async () => {
+  const txt = `ZenRay SFX macros ${JSON.stringify(S.macros)}\n` + (S.tab === "repro" ? $("brief").value : $("base").value);
+  try { await navigator.clipboard.writeText(txt); status("Valeurs copiées."); } catch (e) { status("Copie refusée par le navigateur : " + e.message, true); }
+};
+function tab(t) {
+  S.tab = t;
+  ["repro", "edit", "text"].forEach(k => { $("tab-" + k).classList.toggle("on", t === k); $("view-" + k).hidden = t !== k; });
+  $("side").hidden = t === "text";
+  const main = document.querySelector("main");
+  main.classList.toggle("wide", t === "text"); main.classList.toggle("edit", t === "edit");
+  document.querySelector("main > section.panel:last-child").hidden = t === "edit";
+  if (t === "edit" && S.cur) openEdit(S.cur.name);
+}
+$("tab-repro").onclick = () => tab("repro"); $("tab-text").onclick = () => tab("text"); $("tab-edit").onclick = () => tab("edit");
+
+// 26 October 2026: semantic editing. E = {name, info, edits: {index: {slider: value}}, timer}
+const E = { name: null, info: null, edits: {}, timer: null, seq: 0 };
+async function openEdit(name) {
+  E.name = name; E.edits = {}; $("e-title").textContent = "Édition sémantique, " + name;
+  status("Découpage du son en composants…");
+  try {
+    E.info = await api("/api/semantic?name=" + encodeURIComponent(name));
+    $("e-map").src = "data:image/png;base64," + E.info.map;
+    $("e-legend").innerHTML = E.info.components.map(c => `<span class="chip"><span class="dot" style="display:inline-block;background:${c.colour};vertical-align:middle;margin-right:5px"></span>${c.name}</span>`).join("");
+    const vs = $("e-versions"); vs.innerHTML = `<option value="">Versions enregistrées (${E.info.versions.length})</option>` + E.info.versions.map(v => `<option>${v}</option>`).join("");
+    drawCards();
+    fillRow("r-orig", await api("/api/semantic/render", { name, edits: {}, measure: false }));
+    await renderEdit();
+  } catch (e) { status(e.message, true); }
+}
+function sliderHtml(ci, k, c, v) {
+  return `<div class="slider"><label><span>${c.label} <span class="hint">${c.help}</span></span><span class="num" id="ev-${ci}-${k}">${v}</span></label>
+    <input type="range" data-ci="${ci}" data-k="${k}" min="${c.min}" max="${c.max}" step="${c.step}" value="${v}"></div>`;
+}
+function drawCards() {
+  const sl = E.info.sliders;
+  $("e-cards").innerHTML = E.info.components.map(c => {
+    const ed = E.edits[c.index] || {};
+    const rows = Object.entries(sl).filter(([k]) => k !== "mute").map(([k, d]) => sliderHtml(c.index, k, d, ed[k] ?? d.default)).join("");
+    return `<div class="ecard ${ed.mute ? "muted" : ""}" id="ec-${c.index}"><div class="top"><span class="dot" style="background:${c.colour}"></span><b>${c.name}</b>
+      <span class="hint">pic ${num(c.peakS.toFixed(2))} s, ${num(Math.round(c.share * 100))} % de l'énergie</span>
+      <button class="btn" data-solo="${c.index}">Solo</button><button class="btn" data-mute="${c.index}">${ed.mute ? "Rétablir" : "Couper"}</button>
+      <button class="btn" data-creset="${c.index}">Zéro</button></div>${rows}<audio data-solo-audio="${c.index}" hidden></audio></div>`;
+  }).join("");
+}
+document.addEventListener("input", (e) => {
+  const t = e.target; if (t.dataset.ci == null) return;
+  const ci = t.dataset.ci, k = t.dataset.k;
+  E.edits[ci] = { ...(E.edits[ci] || {}), [k]: +t.value };
+  $(`ev-${ci}-${k}`).textContent = t.value;
+  clearTimeout(E.timer); E.timer = setTimeout(renderEdit, 350);
+});
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("button"); if (!b || S.tab !== "edit") return;
+  if (b.dataset.solo != null) {
+    try { const j = await api("/api/semantic/render", { name: E.name, edits: E.edits, solo: +b.dataset.solo });
+      const a = document.querySelector(`[data-solo-audio="${b.dataset.solo}"]`); a.src = wavUrl(j.wav); a.play(); } catch (err) { status(err.message, true); }
+  }
+  if (b.dataset.mute != null) { const ci = b.dataset.mute; const m = (E.edits[ci] || {}).mute ? 0 : 1; E.edits[ci] = { ...(E.edits[ci] || {}), mute: m }; drawCards(); renderEdit(); }
+  if (b.dataset.creset != null) { delete E.edits[b.dataset.creset]; drawCards(); renderEdit(); }
+});
+async function renderEdit() {
+  const seq = ++E.seq; status("Rendu…");
+  try {
+    const j = await api("/api/semantic/render", { name: E.name, edits: E.edits, measure: false });
+    if (seq !== E.seq) return;
+    fillRow("r-edit", j); status("Mesure de l'écart…");
+    const d = await api("/api/semantic/render", { name: E.name, edits: E.edits, measure: true });
+    if (seq !== E.seq) return;
+    const x = d.distance;
+    $("e-dist").innerHTML = `<span class="chip">${x.word}, ${num(x.localDb)} dB</span>`;
+    status("");
+  } catch (err) { status(err.message, true); }
+}
+$("e-ab").onclick = () => {
+  const [o, r] = [document.querySelector("#r-orig audio"), document.querySelector("#r-edit audio")];
+  document.querySelectorAll("audio").forEach(a => a.pause());
+  o.currentTime = 0; o.play(); o.onended = () => { setTimeout(() => { r.currentTime = 0; r.play(); }, 400); o.onended = null; };
+};
+$("e-reset").onclick = () => { E.edits = {}; drawCards(); renderEdit(); };
+$("e-save").onclick = async () => {
+  try { const j = await api("/api/semantic/save", { name: E.name, edits: E.edits }); status("Version enregistrée : " + j.version);
+    const o = document.createElement("option"); o.textContent = j.version; $("e-versions").appendChild(o); } catch (err) { status(err.message, true); }
+};
+$("e-versions").onchange = async (ev) => {
+  if (!ev.target.value) return;
+  try { const v = await api(`/api/semantic?name=${encodeURIComponent(E.name)}&version=${encodeURIComponent(ev.target.value)}`);
+    E.edits = v.edits; drawCards(); renderEdit(); } catch (err) { status(err.message, true); }
+};
+$("e-copy").onclick = async () => {
+  const names = Object.fromEntries(E.info.components.map(c => [c.index, c.name]));
+  const txt = `ZenRay SFX édition sémantique, ${E.name}\n` + Object.entries(E.edits).map(([ci, ed]) => `${names[ci]} : ${JSON.stringify(ed)}`).join("\n");
+  try { await navigator.clipboard.writeText(txt); status("Valeurs copiées."); } catch (err) { status("Copie refusée : " + err.message, true); }
+};
+load().catch(e => status(e.message, true));
+</script>
+</body>
+</html>

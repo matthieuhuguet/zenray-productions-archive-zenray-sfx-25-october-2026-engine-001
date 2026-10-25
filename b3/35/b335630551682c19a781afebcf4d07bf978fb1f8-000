@@ -1,0 +1,14 @@
+# ZenRay SFX (25 October 2026)
+
+Reproduce, describe and create sound effects without AI: a sound becomes a recipe (readable numbers, no samples),
+then a text brief (exact both ways), both replayable, editable through seven macros and offered as three proposals.
+
+- Method, measurements and failures: `docs/METHOD.md`
+- App: `python3 Scripts/App.py` then http://127.0.0.1:3120
+- Reproduce: `python3 Scripts/Reproduce.py "refs/*.wav" --run <run>`
+- Text brief: `python3 Scripts/FitBrief.py "refs/*.wav" --events 16 --run <run>`
+- Dirty reference test: `python3 Scripts/CleanTest.py`
+- Proofs (green and red): `Scripts/CheckTorchRender.py <recipe>`, `Scripts/CheckBriefText.py`
+- Editable parameters: `zrsfx/methods.py`, `params/archetypes.json`, `params/scenes.json`, `params/macros.json`
+
+Reference audio (`refs/`) and outputs (`out/`) are kept out of git.

@@ -1,0 +1,35 @@
+# 25 October 2026 20:35: detailed recipe -> distilled brief (powers of two of tones and sheets) -> optional CMA
+# correction -> judge the TEXT on held-out seeds. FR : distille, corrige, juge le texte.
+import sys, json, time, argparse, glob; from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import numpy as np, soundfile as sf
+from zrsfx import brief as B, brieffit as F
+from zrsfx.distill import distill
+from zrsfx.score import score
+ap = argparse.ArgumentParser(); ap.add_argument("recipes"); ap.add_argument("--sizes", default="2x2,4x4,8x8")
+ap.add_argument("--correct", type=int, default=0, help="CMA generations per event, 0 = none")
+ap.add_argument("--run", default="distill")
+a = ap.parse_args()
+if __name__ == "__main__":
+    out = Path("out") / a.run; out.mkdir(parents=True, exist_ok=True); rows = []
+    for rp in sorted(glob.glob(a.recipes)):
+        r = json.load(open(rp)); name = r["name"]; x, sr = sf.read(f"refs/{name}.wav")
+        for size in a.sizes.split(","):
+            nt, ns = map(int, size.split("x")); t0 = time.time()
+            br = distill(r, nt, ns); br["name"] = name
+            if a.correct:
+                br = F.refine(x, sr, br, gens=a.correct)
+            text = B.to_text(br); br2 = B.from_text(text)
+            held = [score(B.render(br2, sr, seed=k), x, sr) for k in (7, 8)]
+            row = {"ref": name, "size": size, "events": len(br2["events"]), "numbers": B.count(br2), "words": len(text.split()),
+                   "heldInvariant": round(float(np.mean([h["invariant"] for h in held])), 2),
+                   "linesW": round(float(np.mean([h["linesW"] for h in held])), 1),
+                   "excessPct": round(float(np.mean([h["excessPct"] for h in held])), 2), "seconds": round(time.time() - t0)}
+            rows.append(row); print(json.dumps(row), flush=True)
+            (out / f"{name}__{size}.brief.txt").write_text(text + "\n")
+            sf.write(out / f"{name}__{size}.wav", B.render(br2, sr, seed=7).astype(np.float32), sr)
+    json.dump(rows, open(out / "results.json", "w"), indent=1)
+    for size in a.sizes.split(","):
+        rr = [r for r in rows if r["size"] == size]
+        print(size, "mean inv", round(float(np.mean([r["heldInvariant"] for r in rr])), 2), "linesW", round(float(np.mean([r["linesW"] for r in rr])), 1),
+              "numbers", round(float(np.mean([r["numbers"] for r in rr]))), "words", round(float(np.mean([r["words"] for r in rr]))))

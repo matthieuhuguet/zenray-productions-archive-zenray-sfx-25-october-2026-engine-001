@@ -1,0 +1,59 @@
+# 25 October 2026 21:45: the dirty-reference test. Each clean reference is padded with 0.3 s of room hiss, played
+# through a small room, hissed at -40 dB, MP3-coded at 64 kbit/s; then cleaned, reproduced, and judged against the
+# CLEAN original (aligned by cross-correlation of envelopes). FR : test de la référence sale, jugée contre le propre.
+import sys, json, glob, subprocess, tempfile, time; from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import numpy as np, soundfile as sf
+from zrsfx.analyze import analyze
+from zrsfx.polish import polish
+from zrsfx.render import render
+from zrsfx.score import score
+from zrsfx.clean import clean
+from zrsfx import methods
+
+DIRECT_TO_REVERB_DB, HISS_DB = 12.0, -40.0
+
+
+def dirty(x, sr, seed=0):
+    rng = np.random.default_rng(seed)
+    pad = np.zeros(int(0.3 * sr))
+    y = np.concatenate([pad, x, pad])
+    ir = rng.standard_normal(int(0.25 * sr)) * np.exp(-np.arange(int(0.25 * sr)) / (0.04 * sr))
+    # 25 October 2026: a realistic small room, direct sound 12 dB above the reverberant tail (the first version had
+    # the tail 8 dB ABOVE the direct sound, a cathedral, which alone scored 35.9). FR : pièce réaliste.
+    ir *= 10 ** (-DIRECT_TO_REVERB_DB / 20) / np.sqrt(np.sum(ir ** 2))
+    ir[0] = 1.0
+    y = np.convolve(y, ir)[:len(y)]
+    hiss = np.convolve(rng.standard_normal(len(y)), [1, 0.6, 0.3], "same")
+    y = y + hiss / np.sqrt(np.mean(hiss ** 2)) * np.sqrt(np.mean(x ** 2)) * 10 ** (HISS_DB / 20)
+    with tempfile.TemporaryDirectory() as d:
+        sf.write(f"{d}/a.wav", y.astype(np.float32), sr)
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", f"{d}/a.wav", "-b:a", "64k", f"{d}/a.mp3"], check=True)
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", f"{d}/a.mp3", "-ar", str(sr), "-ac", "1", f"{d}/b.wav"], check=True)
+        z, _ = sf.read(f"{d}/b.wav")
+    return z
+
+def align(y, x, sr):
+    """Shift y so its envelope best matches x's, return the slice the length of x."""
+    h = 64
+    ey = np.sqrt(np.convolve(y ** 2, np.ones(h) / h, "same"))[::h]; ex = np.sqrt(np.convolve(x ** 2, np.ones(h) / h, "same"))[::h]
+    c = np.correlate(ey, ex, "full"); lag = (int(np.argmax(c)) - (len(ex) - 1)) * h
+    y = np.concatenate([np.zeros(max(0, -lag)), y[max(0, lag):]])
+    return np.pad(y, (0, max(0, len(x) - len(y))))[:len(x)]
+
+if __name__ == "__main__":
+    out = Path("out/clean-02"); out.mkdir(parents=True, exist_ok=True); rows = []
+    for ref in sorted(glob.glob("refs/*.wav")):
+        name = Path(ref).stem; x, sr = sf.read(ref); t0 = time.time()
+        d = dirty(x, sr); sf.write(out / f"{name}.dirty.wav", d.astype(np.float32), sr)
+        c, info = clean(d, sr); sf.write(out / f"{name}.cleaned.wav", c.astype(np.float32), sr)
+        r = analyze(c, sr, name=name, **methods.METHODS[methods.DEFAULT]); r = polish(r, c, sr, steps=150)
+        y = render(r, sr, seed=7); sf.write(out / f"{name}.repro.wav", y.astype(np.float32), sr)
+        s_d, s_c, s_r = (score(align(v, x, sr), x, sr) for v in (d, c, y))
+        row = {"ref": name, "dirtyVsClean": s_d["invariant"], "cleanedVsClean": s_c["invariant"], "reproVsClean": s_r["invariant"],
+               "floorDb": [s_d["floorDb"], s_c["floorDb"], s_r["floorDb"]], "excessPct": [s_d["excessPct"], s_c["excessPct"], s_r["excessPct"]],
+               "linesW": [s_d["linesW"], s_c["linesW"], s_r["linesW"]], "seconds": round(time.time() - t0)}
+        rows.append(row); print(json.dumps(row), flush=True)
+    json.dump(rows, open(out / "results.json", "w"), indent=1)
+    for k in ("dirtyVsClean", "cleanedVsClean", "reproVsClean"):
+        print(k, round(float(np.mean([r[k] for r in rows])), 2))

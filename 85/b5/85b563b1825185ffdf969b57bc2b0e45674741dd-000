@@ -1,0 +1,32 @@
+# 26 October 2026 00:35: which decomposition gives components a sound designer can edit? For each method and sound:
+# identity (sum of components == recipe), overlap (energy two components share, third-octave cells, lower is
+# cleaner), useful components (share > 2 %), and the local audibility of +6 dB on each component (an edit that
+# does nothing audible means a useless slider). FR : compare les découpages, identité, chevauchement, utilité.
+import sys, json, glob; sys.path.insert(0, ".")
+import numpy as np
+from zrsfx import semantic as SM
+from zrsfx.render import render, stft
+
+def tob(x, sr=48000):
+    f = np.fft.rfftfreq(2048, 1 / sr); edges = 25 * 2 ** (np.arange(0, 31) / 3)
+    band = np.clip(np.searchsorted(edges, f) - 1, 0, 29); P = np.abs(stft(x, 2048, 256)) ** 2
+    B = np.zeros((30, P.shape[1])); np.add.at(B, band, P); return B
+
+rows = []
+for f in sorted(glob.glob(sys.argv[1])):
+    r = json.load(open(f))
+    for meth in ("nmf", "layers"):
+        m = SM.build(r, method=meth)
+        ident = float(np.abs(render(r, seed=7) - SM.render(m, {}, seed=7)[:int(round(r["seconds"] * 48000))]).max())
+        sol = [tob(SM.solo(m, c["index"], seed=7)) for c in m["components"]]
+        tot = sum(sol) + 1e-30
+        ov = sum(np.minimum(sol[i], sol[j]).sum() for i in range(len(sol)) for j in range(i + 1, len(sol))) / tot.sum()
+        useful = sum(c["desc"]["share"] > 0.02 for c in m["components"])
+        aud = [SM.edit_distance(m, {str(c["index"]): {"levelDb": 6}})["localDb"] for c in m["components"]]
+        row = {"ref": r["name"], "method": meth, "components": len(m["components"]), "useful": useful, "overlapPct": round(100 * ov, 1),
+               "identity": f"{ident:.1e}", "plus6dBLocal": [round(v, 1) for v in aud], "names": [c["name"] for c in m["components"]]}
+        rows.append(row); print(json.dumps(row, ensure_ascii=False), flush=True)
+for meth in ("nmf", "layers"):
+    rr = [r for r in rows if r["method"] == meth]
+    print(meth, "overlap", round(float(np.mean([r["overlapPct"] for r in rr])), 1), "% | useful", round(float(np.mean([r["useful"] for r in rr])), 1),
+          "| silent sliders (+6 dB < 1 dB)", sum(v < 1 for r in rr for v in r["plus6dBLocal"]))
