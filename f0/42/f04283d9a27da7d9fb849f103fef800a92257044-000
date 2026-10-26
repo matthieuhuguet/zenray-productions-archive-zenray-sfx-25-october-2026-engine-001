@@ -76,5 +76,26 @@
     "noteDb": -4.0,
     "musicDb": -9.0,
     "effectsDb": 0.0
+  },
+  "track": {
+    "_doc": "26 October 2026: the 6 s sound track alone (Matthieu): the Ghibli note first, then a slight offset, then sound 1 plays as it is (son1-v3, the old mix without the note), then sound 2 as it is (son2-v3, music cut at 5 s) at 3.0 s. Three micro-offsets of sound 1 to choose from (seconds): sound 1 is only delayed, never changed, so its strong instant (the lens, 1.667 s) lands that much later. Every input is normalised to stemLufs first, then placed; the track keeps the common gain only if a peak would pass peakDb. FR : la piste sonore de 6 s seule, trois micro-décalages du son 1. 26 October 2026, final round (Matthieu: the note should be quieter in every case, and the final mix perfect to the ear): noteDb -9 dB under sound 1 (was -4). The final master is the same chain as the app's own export (loudnorm to the project's target, true peak under truePeakDb) in two passes, linear (a pure gain, nothing squashed), after a 20 Hz high-pass.",
+    "stemLufs": -23.0,
+    "noteDb": -9.0,
+    "noteOnset": 0.0,
+    "son1": "out/assembly/son1-v3.wav",
+    "son2": "out/assembly/son2-v3.wav",
+    "son2At": 3.0,
+    "delays": {
+      "1": 0.06,
+      "2": 0.12,
+      "3": 0.18
+    },
+    "master": {
+      "highpassHz": 20,
+      "targetLufs": -14.0,
+      "truePeakDb": -1.0,
+      "lra": 11,
+      "video": "out/f-final/F-silent.mp4"
+    }
   }
 }

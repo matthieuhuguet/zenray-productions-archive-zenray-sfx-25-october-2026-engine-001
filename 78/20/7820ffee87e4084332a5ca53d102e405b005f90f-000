@@ -1,0 +1,63 @@
+# 26 October 2026: the FINAL videos of rhythm F: the 6 s track (note Ghibli at 0 s, sound 1 delayed by 60, 120 or 180 ms, sound 2 at 3.0 s, params/assembly.json "track") mastered like the app's own export
+# (20 Hz high-pass, a pure gain to targetLufs, a look-ahead limiter only on the peaks above truePeakDb) and muxed under the silent video of F. Writes out/assembly-final/F-final-d<ms>.mp4 and the
+# mastered wav; measures.json holds integrated loudness, range, true peak and the short-term loudness range of each. --check proves it (green) and a wrong delay must fail (--red).
+# FR : les vidéos finales de F : piste de 6 s, masterisée comme l'export de l'app (gain pur à −14 LUFS), puis posée sous la vidéo.
+import json, re, subprocess, sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(ROOT / "Scripts"))
+import numpy as np, soundfile as sf
+import AssembleTrack as T
+A, P, TR, M, SR = T.A, T.P, T.TR, T.TR["master"], T.SR; OUT = ROOT / "out/assembly-final"; OUT.mkdir(parents=True, exist_ok=True)
+
+def ff(*a): return subprocess.run(["ffmpeg", "-nostats", "-hide_banner", *a], capture_output=True, text=True)
+def measure(f):
+    r = ff("-i", str(f), "-af", "ebur128=peak=true:framelog=quiet", "-f", "null", "-").stderr
+    g = lambda pat: float(re.findall(pat, r)[-1])
+    return {"integratedLufs": g(r"I:\s+(-?\d+\.\d+) LUFS"), "rangeLU": g(r"LRA:\s+(-?\d+\.\d+) LU"), "truePeakDb": g(r"Peak:\s+(-?\d+\.\d+) dBFS")}
+def shortterm(f):
+    """Loudness of every 3 s window slid by 0.5 s (EBU integrated value of each window): how even the sound stays over the film."""
+    y, sr = sf.read(f, dtype="float32"); out = []; w = OUT / "_w.wav"
+    for s0 in np.arange(0, len(y) / sr - 2.99, 0.5):
+        sf.write(w, y[int(s0 * sr):int((s0 + 3) * sr)], sr, subtype="FLOAT"); out.append(round(float(re.findall(r"I:\s+(-?\d+\.\d+) LUFS", ff("-i", str(w), "-af", "ebur128", "-f", "null", "-").stderr)[-1]), 1))
+    w.unlink(missing_ok=True); return out
+
+def master(pre, dst):
+    """20 Hz high-pass, a PURE GAIN to targetLufs, then a look-ahead limiter (5 ms attack, 60 ms release) that only touches the few peaks above the true-peak ceiling. loudnorm is not used: from -23 LUFS
+    to -14 the track needs +9 dB while its peaks sit 15 dB above its loudness, and loudnorm's dynamic fallback would squash the whole film, not only the peaks. The gain is tuned twice because
+    the limiter lowers the loudness a little. Returns the measured values."""
+    ceil = 10 ** (M["truePeakDb"] / 20); gain = M["targetLufs"] - measure(pre)["integratedLufs"]; tag = {}
+    for _ in range(3):
+        af = f"highpass=f={M['highpassHz']},volume={gain:.3f}dB,alimiter=limit={ceil:.4f}:attack=5:release=60:level=disabled"
+        r = ff("-y", "-i", str(pre), "-af", af, "-ar", "48000", "-c:a", "pcm_s24le", str(dst)); assert dst.is_file(), r.stderr[-400:]
+        m = measure(dst); gain += M["targetLufs"] - m["integratedLufs"]
+        if abs(M["targetLufs"] - m["integratedLufs"]) < 0.1 and m["truePeakDb"] <= M["truePeakDb"] + 0.05: break
+    tag["gainDb"] = round(gain, 2); return tag
+
+def build():
+    rows = {}
+    for k, d in TR["delays"].items():
+        note, s1, s2, log = T.layers(d); mix = note + s1 + s2; pre = OUT / f"_pre-d{T.ms(d)}.wav"; sf.write(pre, mix, SR, subtype="FLOAT")
+        wav = OUT / f"F-final-d{T.ms(d)}.wav"; j = master(pre, wav); pre.unlink()
+        mp4 = OUT / f"ZenRay-Sony-PlayStation-F-final-d{T.ms(d)}.mp4"
+        r = ff("-y", "-i", str(ROOT / M["video"]), "-i", str(wav), "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "256k", "-shortest", "-movflags", "+faststart", str(mp4)); assert mp4.is_file(), r.stderr[-300:]
+        m = measure(wav); st = shortterm(wav)
+        rows[mp4.name] = {"sound1DelayMs": round(d * 1000), **m, "shortTermLufsEvery0.5s": st, "shortTermSpreadLU": round(max(st) - min(st), 1), "gainAppliedDb": j["gainDb"]}; print(mp4.name, {a: b for a, b in rows[mp4.name].items() if a != "shortTermLufsEvery0.5s"}, st)
+    (OUT / "measures.json").write_text(json.dumps(rows, indent=1, ensure_ascii=False))
+
+def check(red):
+    """The master must be the track times ONE gain (plus the 20 Hz high-pass), changed only on the few peaks the limiter touches: the same gain on the three sounds (spread under 0.5 dB), under 1.5 % of the samples
+    touched, loudness on target (0.3 LU), true peak under the ceiling, 6.0 s of video and audio. --red delays sound 1 by 5 ms more than the file says and must fail."""
+    from scipy.signal import butter, sosfiltfilt
+    bad = 0
+    for k, d in TR["delays"].items():
+        note, s1, s2, _ = T.layers(d + (0.005 if red else 0.0)); wav = OUT / f"F-final-d{T.ms(d)}.wav"; y, _ = sf.read(wav, dtype="float32")
+        sos = butter(2, M["highpassHz"], "high", fs=SR, output="sos"); X = [sosfiltfilt(sos, z, axis=0).ravel() for z in (note, s1, s2)]
+        Mx = np.stack(X, 1); coef, *_ = np.linalg.lstsq(Mx, y.ravel(), rcond=None); fit = Mx @ coef; err = float(np.sqrt(((fit - y.ravel()) ** 2).mean()) / np.sqrt((y ** 2).mean()))
+        touched = float((np.abs(fit - y.ravel()) > 0.02 * np.abs(y).max()).mean()); spread = 20 * np.log10(max(abs(c) for c in coef) / min(abs(c) for c in coef)); m = measure(wav)
+        v = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "stream=codec_type,duration", "-of", "csv=p=0", str(OUT / f"ZenRay-Sony-PlayStation-F-final-d{T.ms(d)}.mp4")], capture_output=True, text=True).stdout
+        ok = err < 0.05 and spread < 0.5 and touched < 0.015 and abs(m["integratedLufs"] - M["targetLufs"]) < 0.3 and m["truePeakDb"] <= M["truePeakDb"] + 0.05 and v.count("6.0") >= 2; bad += not ok
+        print(("ok   " if ok else "FAIL ") + f"d{T.ms(d)}: {m['integratedLufs']:.1f} LUFS, true peak {m['truePeakDb']:.1f} dB, range {m['rangeLU']:.1f} LU, error vs pure gain {err:.4f}, samples touched by the limiter {100 * touched:.2f} %, gain spread between the three sounds {spread:.2f} dB, video and audio 6.0 s")
+    sys.exit(1 if bad else 0)
+
+if __name__ == "__main__":
+    check("--red" in sys.argv) if "--check" in sys.argv else build()

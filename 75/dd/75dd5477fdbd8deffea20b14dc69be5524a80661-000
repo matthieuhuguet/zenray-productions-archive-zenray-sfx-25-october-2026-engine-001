@@ -1,0 +1,51 @@
+# 26 October 2026: the 6 s SOUND TRACK alone (params/assembly.json, section "track"): the Ghibli note at the start, sound 1 delayed by a micro-offset (three to choose from), sound 2 at 3.0 s.
+# Every input (note, son1-v3, son2-v3) is normalised to stemLufs first, then placed and summed. Writes out/assembly-track/piste-6s-d<ms>.wav. --check proves levels and every delay
+# to the sample; --check --red (a wrong delay) must fail. FR : la piste sonore de 6 s, trois micro-décalages du son 1.
+import json, sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(ROOT / "Scripts"))
+import numpy as np, soundfile as sf
+import Assemble6s as A
+import AssembleNote as N
+P, SR, db, NP, TR = A.P, A.SR, A.db, A.P["note"], A.P["track"]; OUT = ROOT / "out/assembly-track"; OUT.mkdir(parents=True, exist_ok=True); N6 = 6 * SR
+
+def ms(d): return f"{int(round(d * 1000)):03d}"
+def stems(log=None):
+    log = {} if log is None else log
+    V, _ = sf.read(ROOT / NP["source"], dtype="float32", always_2d=True); a, b = int(round(NP["from"] * SR)), int(round(NP["to"] * SR)); note_cut = A.fade(V[a:b], NP["fade"])
+    n = A.normalise(note_cut, "ghibli note", log); lead = int(round(NP["lead"] * SR)); body = n[max(0, int(round(N.note_onset(note_cut) * SR)) - lead):]
+    s1, sr1 = sf.read(ROOT / TR["son1"], dtype="float32"); s2, sr2 = sf.read(ROOT / TR["son2"], dtype="float32"); assert sr1 == sr2 == SR
+    return body, A.normalise(s1, "son1-v3", log), A.normalise(s2, "son2-v3", log), log
+
+def put(y, start):
+    out = np.zeros((N6, 2), np.float32); a = int(round(start * SR)); seg = y[:max(0, N6 - a)]; out[a:a + len(seg)] = seg; return out
+
+def layers(d):
+    body, s1, s2, log = stems()
+    return put(body, max(0.0, TR["noteOnset"] - NP["lead"])) * db(TR["noteDb"]), put(s1, d), put(s2, TR["son2At"]), log
+
+def build():
+    rows = {}
+    for k, d in TR["delays"].items():
+        note, s1, s2, log = layers(d); mix = note + s1 + s2; peak = float(np.abs(mix).max())
+        if peak > db(P["peakDb"]): mix = mix * db(P["peakDb"]) / peak
+        f = OUT / f"piste-6s-d{ms(d)}.wav"; sf.write(f, mix, SR, subtype="PCM_24")
+        rows[f.name] = {"sound1DelayMs": round(d * 1000), "samples": len(mix), "lufs": round(A.lufs(mix), 2), "peakDb": round(float(20 * np.log10(np.abs(mix).max())), 2), "lensImpactAt": round(1.667 + d, 3)}; print(f.name, rows[f.name])
+    for k, v in log.items(): print("input", k, v)
+    (OUT / "measures.json").write_text(json.dumps({"inputs": log, "tracks": rows}, indent=1, ensure_ascii=False)); (A.OUT / "_t.wav").unlink(missing_ok=True)
+
+def check(red):
+    bad = 0
+    for k, d in TR["delays"].items():
+        note, s1, s2, log = layers(d + (0.005 if red else 0.0))      # red: sound 1 is 5 ms later than the file says
+        if k == "1":
+            for nm, w in log.items():
+                ok = abs(w["lufsAfter"] - TR["stemLufs"]) < 0.15; bad += not ok; print(("ok   " if ok else "FAIL ") + f"input {nm}: {w['lufsBefore']} -> {w['lufsAfter']} LUFS")
+        y, _ = sf.read(OUT / f"piste-6s-d{ms(d)}.wav", dtype="float32"); M = np.stack([(note / db(TR["noteDb"])).ravel(), s1.ravel(), s2.ravel()], 1); coef, *_ = np.linalg.lstsq(M, y.ravel(), rcond=None)
+        err = float(np.sqrt(((M @ coef - y.ravel()) ** 2).mean()) / np.sqrt((y ** 2).mean())); g = lambda c, ref: 20 * np.log10(abs(c) / abs(ref)); e_n, e_2 = g(coef[0], coef[1]), g(coef[2], coef[1])
+        ok = y.shape == (N6, 2) and err < 2e-3 and np.abs(y).max() < 0.99 and abs(e_n - TR["noteDb"]) < 0.1 and abs(e_2) < 0.1; bad += not ok
+        print(("ok   " if ok else "FAIL ") + f"d{ms(d)}: samples {len(y)}, error {err:.5f}, note vs sound 1 {e_n:+.2f} dB, sound 2 vs sound 1 {e_2:+.2f} dB")
+    sys.exit(1 if bad else 0)
+
+if __name__ == "__main__":
+    check("--red" in sys.argv) if "--check" in sys.argv else build()

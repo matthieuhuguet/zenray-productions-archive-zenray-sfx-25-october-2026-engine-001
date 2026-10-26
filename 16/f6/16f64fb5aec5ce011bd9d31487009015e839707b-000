@@ -1,0 +1,45 @@
+{
+ "inputs": {
+  "ghibli note": {
+   "lufsBefore": -19.1,
+   "gainDb": -3.9,
+   "lufsAfter": -23.0,
+   "peakDb": -9.01
+  },
+  "son1-v3": {
+   "lufsBefore": -24.0,
+   "gainDb": 1.0,
+   "lufsAfter": -23.0,
+   "peakDb": -7.7
+  },
+  "son2-v3": {
+   "lufsBefore": -24.0,
+   "gainDb": 1.0,
+   "lufsAfter": -23.0,
+   "peakDb": -8.38
+  }
+ },
+ "tracks": {
+  "piste-6s-d060.wav": {
+   "sound1DelayMs": 60,
+   "samples": 288000,
+   "lufs": -23.0,
+   "peakDb": -7.7,
+   "lensImpactAt": 1.727
+  },
+  "piste-6s-d120.wav": {
+   "sound1DelayMs": 120,
+   "samples": 288000,
+   "lufs": -23.0,
+   "peakDb": -7.7,
+   "lensImpactAt": 1.787
+  },
+  "piste-6s-d180.wav": {
+   "sound1DelayMs": 180,
+   "samples": 288000,
+   "lufs": -23.0,
+   "peakDb": -7.7,
+   "lensImpactAt": 1.847
+  }
+ }
+}
