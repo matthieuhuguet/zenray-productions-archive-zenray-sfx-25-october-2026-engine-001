@@ -1,0 +1,25 @@
+# 26 October 2026: the FINAL videos of rhythm F at 60 fps, from the motion itself (not an upsampling): HyperFrames renders the cooked page at 4K (2x the composition, an integer multiple) and 60 fps,
+# ffmpeg brings it to 2048 px wide (lanczos) and lays the mastered track under it. 16:9 uses the project as it is; 1:1 uses a copy of the project whose format is 1x1 (the motion's own square layout,
+# nothing cropped, nothing stretched). Usage: <motion python> -I Scripts/RenderFinal.py <wav> <out-dir>   FR : vidéos finales de F en 60 images par seconde, 2048 px et carré.
+import json, shutil, subprocess, sys, tempfile
+from pathlib import Path
+MOTION = "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRayMotionDesign/motion"; sys.path.insert(0, MOTION)
+import server
+wav, out = Path(sys.argv[1]).resolve(), Path(sys.argv[2]).resolve(); out.mkdir(parents=True, exist_ok=True); SRC = "zenray-sony-playstation-f-ppm"
+def render(pid, res, tag, size):
+    work = Path(tempfile.mkdtemp(prefix="zrf-")); raw = work / "raw.mp4"
+    try:
+        page = server.cook(pid, work / "page")
+        r = server.hyperframes(page, "render", "--resolution", res, "-f", "60", "-q", "high", "-w", "4", "-o", str(raw), timeout=3000)
+        if r.returncode or not raw.exists(): raise SystemExit(f"HyperFrames failed: {(r.stderr or r.stdout)[-700:]}")
+        dst = out / f"ZenRay-Sony-PlayStation-F-final-logo-flare-{tag}.mp4"
+        f = subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(raw), "-i", str(wav), "-map", "0:v", "-map", "1:a", "-vf", f"scale={size}:flags=lanczos,format=yuv420p", "-r", "60",
+                            "-c:v", "libx264", "-crf", "14", "-preset", "slow", "-c:a", "aac", "-b:a", "256k", "-shortest", "-movflags", "+faststart", str(dst)], capture_output=True, text=True)
+        if f.returncode: raise SystemExit(f.stderr[-500:])
+        print(dst, f"{dst.stat().st_size / 1e6:.1f} MB")
+    finally: shutil.rmtree(work, ignore_errors=True)
+render(SRC, "landscape-4k", "60fps-2048x1152", "2048:1152")
+sq = SRC.replace("-f-", "-f-square-tmp-"); d = server.project_dir(sq); d.mkdir(parents=True, exist_ok=True)
+p = server.read_project(SRC); p["format"] = "1x1"; (d / "project.json").write_text(json.dumps(p, ensure_ascii=False), encoding="utf-8")
+try: render(sq, "square-4k", "60fps-2048x2048-carre", "2048:2048")
+finally: shutil.rmtree(d, ignore_errors=True)
