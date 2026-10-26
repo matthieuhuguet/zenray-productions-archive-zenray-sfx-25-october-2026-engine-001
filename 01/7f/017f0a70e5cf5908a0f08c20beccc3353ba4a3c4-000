@@ -1,0 +1,73 @@
+{
+ "inputs": {
+  "music 0-2.5s": {
+   "lufsBefore": -32.2,
+   "gainDb": 9.2,
+   "lufsAfter": -23.0,
+   "peakDb": -9.95
+  },
+  "music 3-6s": {
+   "lufsBefore": -33.3,
+   "gainDb": 10.3,
+   "lufsAfter": -23.0,
+   "peakDb": -10.38
+  },
+  "sfx1-B1s": {
+   "lufsBefore": -21.4,
+   "gainDb": -1.6,
+   "lufsAfter": -23.0,
+   "peakDb": -7.7
+  },
+  "sfx2-G2": {
+   "lufsBefore": -23.0,
+   "gainDb": 0.0,
+   "lufsAfter": -23.0,
+   "peakDb": -12.42
+  },
+  "sfx2-J2": {
+   "lufsBefore": -22.0,
+   "gainDb": -1.0,
+   "lufsAfter": -23.0,
+   "peakDb": -9.67
+  }
+ },
+ "mixes": {
+  "son1-v1": {
+   "name": "Musique devant",
+   "samples": 144000,
+   "lufs": -24.0,
+   "peakDb": -11.3
+  },
+  "son1-v2": {
+   "name": "Équilibré",
+   "samples": 144000,
+   "lufs": -24.0,
+   "peakDb": -10.2
+  },
+  "son1-v3": {
+   "name": "Effets devant",
+   "samples": 144000,
+   "lufs": -24.0,
+   "peakDb": -8.55
+  },
+  "son2-v1": {
+   "name": "Musique devant",
+   "samples": 144000,
+   "lufs": -24.0,
+   "peakDb": -11.02
+  },
+  "son2-v2": {
+   "name": "Équilibré",
+   "samples": 144000,
+   "lufs": -24.0,
+   "peakDb": -10.11
+  },
+  "son2-v3": {
+   "name": "Effets devant",
+   "samples": 144000,
+   "lufs": -24.0,
+   "peakDb": -9.43
+  }
+ },
+ "firstEnd": 2.5
+}

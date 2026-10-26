@@ -1,6 +1,33 @@
 {
-  "_doc": "26 October 2026: assembly of the 6 s film audio from the audio of the second reference video (https://youtu.be/3uiYZN9RkTA, first 6 s, a meditation piece) and the chosen sounds. Cuts: 0-3 s, 3-6 s, 0-6 s with a 0.33 s fade in and out. Sound 1 (film 0 to 3 s) = sfx1-B1s placed at 0.35 s + sfx2-G2 at 0 s (gain padDb under B1s) + the first 3 s of the video; sound 2 (film 3 to 6 s) = sfx2-J2 + the last 3 s of the video. Three versions of each: music forward, balanced, sound effects forward (offsets in dB on stems first equalised to the same loudness). FR : assemblage 6 s, trois versions de chaque son.",
-  "source": "assembly/video2-first6s-raw.wav", "fade": 0.33, "stemLufs": -25.0, "finalLufs": -24.0, "peakDb": -3.0, "g2UnderB1sDb": -3.0, "b1sStart": 0.35,
-  "versions": {"1": {"name": "Musique devant", "musicDb": 0.0, "sfxDb": -9.0}, "2": {"name": "Équilibré", "musicDb": -3.0, "sfxDb": -3.0}, "3": {"name": "Effets devant", "musicDb": -9.0, "sfxDb": 0.0}},
-  "files": {"b1s": "out/proposals/zenray-sony-playstation-d-ppm/sfx1-B1s.wav", "g2": "out/proposals/zenray-sony-playstation-d-ppm/sfx2-G2.wav", "j2": "out/proposals/zenray-sony-playstation-d-ppm/sfx2-J2.wav"}
+  "_doc": "26 October 2026 (round 2, after Matthieu: the mix was weird because the inputs were not at the same level; normalise EVERY input first, then merge). Assembly of the 6 s film audio from the audio of the second reference video (https://youtu.be/3uiYZN9RkTA, first 6 s, a meditation piece) and the chosen sounds. Cuts: 0-firstEnd s (2.0, Matthieu: the music is only needed up to 2 s, not 3), 3-6 s (perfect as it was), 0-6 s, each with a 0.33 s fade in and out. Pipeline: (1) every input (the music cuts, sfx1-B1s, sfx2-G2, sfx2-J2) is normalised to inputLufs on its own; (2) merge: sound 1 (film 0 to 3 s) = B1s placed at 0.35 s + G2 at 0 s (g2UnderB1sDb under B1s) + the music 0-firstEnd; sound 2 (film 3 to 6 s) = J2 + the music 3-6 s; (3) the versions offset music and effects in dB; (4) each mix is normalised to finalLufs with a peak limit. Three versions of each sound: music forward, balanced, effects forward. FR : tout est normalisé d'abord, puis fusionné.",
+  "source": "assembly/video2-first6s-raw.wav",
+  "fade": 0.33,
+  "finalLufs": -24.0,
+  "peakDb": -3.0,
+  "g2UnderB1sDb": -3.0,
+  "b1sStart": 0.35,
+  "versions": {
+    "1": {
+      "name": "Musique devant",
+      "musicDb": 0.0,
+      "sfxDb": -9.0
+    },
+    "2": {
+      "name": "Équilibré",
+      "musicDb": -3.0,
+      "sfxDb": -3.0
+    },
+    "3": {
+      "name": "Effets devant",
+      "musicDb": -9.0,
+      "sfxDb": 0.0
+    }
+  },
+  "files": {
+    "b1s": "out/proposals/zenray-sony-playstation-d-ppm/sfx1-B1s.wav",
+    "g2": "out/proposals/zenray-sony-playstation-d-ppm/sfx2-G2.wav",
+    "j2": "out/proposals/zenray-sony-playstation-d-ppm/sfx2-J2.wav"
+  },
+  "firstEnd": 2.0,
+  "inputLufs": -23.0
 }
