@@ -6,11 +6,11 @@
    "lufsAfter": -23.0,
    "peakDb": -10.65
   },
-  "music 3-6s": {
-   "lufsBefore": -33.3,
-   "gainDb": 10.3,
+  "music 3-5s": {
+   "lufsBefore": -32.2,
+   "gainDb": 9.2,
    "lufsAfter": -23.0,
-   "peakDb": -10.38
+   "peakDb": -11.48
   },
   "sfx1-B1s": {
    "lufsBefore": -21.4,
@@ -54,19 +54,19 @@
    "name": "Musique devant",
    "samples": 144000,
    "lufs": -24.0,
-   "peakDb": -11.02
+   "peakDb": -11.29
   },
   "son2-v2": {
    "name": "Équilibré",
    "samples": 144000,
    "lufs": -24.0,
-   "peakDb": -10.11
+   "peakDb": -9.67
   },
   "son2-v3": {
    "name": "Effets devant",
    "samples": 144000,
    "lufs": -24.0,
-   "peakDb": -9.43
+   "peakDb": -9.38
   }
  },
  "firstEnd": 2.0

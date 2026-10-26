@@ -1,5 +1,5 @@
 {
-  "_doc": "26 October 2026 (round 2, after Matthieu: the mix was weird because the inputs were not at the same level; normalise EVERY input first, then merge). Assembly of the 6 s film audio from the audio of the second reference video (https://youtu.be/3uiYZN9RkTA, first 6 s, a meditation piece) and the chosen sounds. Cuts: 0-firstEnd s (2.0, Matthieu: the music is only needed up to 2 s, not 3), 3-6 s (perfect as it was), 0-6 s, each with a 0.33 s fade in and out. Pipeline: (1) every input (the music cuts, sfx1-B1s, sfx2-G2, sfx2-J2) is normalised to inputLufs on its own; (2) merge: sound 1 (film 0 to 3 s) = B1s placed at 0.35 s + G2 at 0 s (g2UnderB1sDb under B1s) + the music 0-firstEnd; sound 2 (film 3 to 6 s) = J2 + the music 3-6 s; (3) the versions offset music and effects in dB; (4) each mix is normalised to finalLufs with a peak limit. Three versions of each sound: music forward, balanced, effects forward. FR : tout est normalisé d'abord, puis fusionné.",
+  "_doc": "26 October 2026 (round 2, after Matthieu: the mix was weird because the inputs were not at the same level; normalise EVERY input first, then merge). Assembly of the 6 s film audio from the audio of the second reference video (https://youtu.be/3uiYZN9RkTA, first 6 s, a meditation piece) and the chosen sounds. Cuts: 0-firstEnd s (2.0, Matthieu: the music is only needed up to 2 s, not 3), 3-6 s (perfect as it was), 0-6 s, each with a 0.33 s fade in and out. Pipeline: (1) every input (the music cuts, sfx1-B1s, sfx2-G2, sfx2-J2) is normalised to inputLufs on its own; (2) merge: sound 1 (film 0 to 3 s) = B1s placed at 0.35 s + G2 at 0 s (g2UnderB1sDb under B1s) + the music 0-firstEnd; sound 2 (film 3 to 6 s) = J2 + the music 3-6 s; (3) the versions offset music and effects in dB; (4) each mix is normalised to finalLufs with a peak limit. Three versions of each sound: music forward, balanced, effects forward. FR : tout est normalisé d'abord, puis fusionné. 26 October 2026, round 3 (Matthieu): the music of sound 2 is cut at 5 s (second.end), its last second removed, with a 0.5 s fade out, so the last note of the piece is never heard; the file is video-3-5s.",
   "source": "assembly/video2-first6s-raw.wav",
   "fade": 0.33,
   "finalLufs": -24.0,
@@ -29,5 +29,52 @@
     "j2": "out/proposals/zenray-sony-playstation-d-ppm/sfx2-J2.wav"
   },
   "firstEnd": 2.0,
-  "inputLufs": -23.0
+  "inputLufs": -23.0,
+  "second": {
+    "start": 3.0,
+    "end": 5.0,
+    "fadeIn": 0.33,
+    "fadeOut": 0.5
+  },
+  "note": {
+    "_doc": "26 October 2026: the Ghibli note (trailer of Le Garcon et le Heron, youtube Q2aTi0BQXek, 1.5 s to 3.0 s of the video: 0.4 s of silence then one steady note at 666 Hz, no voice) added to sound 1 with the two earlier effects (B1s, G2). 'at' = the film second where the cut starts (1.5, so the note sounds from 2.0 s to 3.0 s, as in the trailer). Every input is normalised first; the three proposals only change how loud the note is against the base effects (dB). 26 October 2026, round 2 (Matthieu: the note comes at the START of the sound, not at the end): each version now says where the NOTE ITSELF begins (onset, a film second, or a cue of the film): the 0.4 s of silence before the note in the cut are dropped. Only the timing changes between versions, the level is the same (noteDb).",
+    "source": "assembly/ghibli-first50s-raw.wav",
+    "from": 1.5,
+    "to": 3.0,
+    "fade": 0.33,
+    "musicDb": -9.0,
+    "effectsDb": 0.0,
+    "versions": {
+      "1": {
+        "name": "Note dès la première seconde (0 s)",
+        "onset": {
+          "at": 0.0
+        },
+        "noteDb": -4.0
+      },
+      "2": {
+        "name": "Note à 0,2 s",
+        "onset": {
+          "at": 0.2
+        },
+        "noteDb": -4.0
+      },
+      "3": {
+        "name": "Note avec la première lueur sur le R",
+        "onset": {
+          "cue": "firstLight"
+        },
+        "noteDb": -4.0
+      }
+    },
+    "noteOnsetThresholdDb": -30,
+    "lead": 0.02
+  },
+  "note2": {
+    "_doc": "26 October 2026: test of the Ghibli note in SOUND 2 (film 3 to 6 s), in the empty last second left by cutting the music at 5 s: the note itself begins 2.0 s into the sound (film 5.0 s) and sounds for one second, to the end. Same balance as the chosen version v3 (music -9 dB, effects 0 dB) with the note at noteDb under the effects. FR : la note Ghibli dans le blanc de la fin du son 2.",
+    "onset": 2.0,
+    "noteDb": -4.0,
+    "musicDb": -9.0,
+    "effectsDb": 0.0
+  }
 }

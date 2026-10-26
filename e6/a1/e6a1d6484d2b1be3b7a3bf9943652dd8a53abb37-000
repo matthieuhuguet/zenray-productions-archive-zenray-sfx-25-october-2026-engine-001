@@ -1,0 +1,41 @@
+# 26 October 2026: SOUND 2 with the Ghibli note in its last second (params/assembly.json, section "note2"): music 3-5 s (the last note of the piece already cut off), sfx2-J2, and the note that begins
+# 2.0 s into the sound (film 5.0 s), every input normalised FIRST. Writes out/assembly-note/son2-note.wav; --check proves levels and timing, --check --red must fail.
+# FR : le son 2 avec la note Ghibli dans le blanc de la dernière seconde.
+import json, sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(ROOT / "Scripts"))
+import numpy as np, soundfile as sf
+import Assemble6s as A
+import AssembleNote as N
+P, SR, db, OUT = A.P, A.SR, A.db, N.OUT; NP = P["note"]; N2 = P["note2"]
+
+def stems():
+    first = P["firstEnd"]; cuts, b1s, g2, j2 = A.inputs(first); log = {}
+    V, _ = sf.read(ROOT / NP["source"], dtype="float32", always_2d=True); a, b = int(round(NP["from"] * SR)), int(round(NP["to"] * SR))
+    note_cut = A.fade(V[a:b], NP["fade"]); n = A.normalise(note_cut, "ghibli note", log)
+    music = A.normalise(cuts["video-3-5s"], "music 3-5s", log); J = A.normalise(A.mono_to_stereo(j2), "sfx2-J2", log)
+    lead = int(round(NP["lead"] * SR)); k0 = max(0, int(round(N.note_onset(note_cut) * SR)) - lead); body = n[k0:]
+    note = np.zeros((A.N3, 2), np.float32); s0 = max(0, int(round(N2["onset"] * SR)) - lead); note[s0:s0 + len(body)] = body[:A.N3 - s0]
+    return A.pad3(music), J, note, log
+
+def build():
+    music, J, note, log = stems(); mix = music * db(N2["musicDb"]) + J * db(N2["effectsDb"]) + note * db(N2["noteDb"]); mix = mix * db(P["finalLufs"] - A.lufs(mix))
+    if np.abs(mix).max() > db(P["peakDb"]): mix *= db(P["peakDb"]) / np.abs(mix).max()
+    sf.write(OUT / "son2-note.wav", mix, SR, subtype="PCM_24"); print("son2-note", {"samples": len(mix), "lufs": round(A.lufs(mix), 2), "peakDb": round(float(20 * np.log10(np.abs(mix).max())), 2)})
+    for k, v in log.items(): print("input", k, v)
+    (A.OUT / "_t.wav").unlink(missing_ok=True)
+
+def check(red):
+    music, J, note, log = stems(); bad = 0
+    for k, w in log.items():
+        ok = abs(w["lufsAfter"] - P["inputLufs"]) < 0.15; bad += not ok; print(("ok   " if ok else "FAIL ") + f"input {k}: {w['lufsBefore']} -> {w['lufsAfter']} LUFS")
+    if red: note = np.roll(note * db(-12), int(0.5 * SR), axis=0)
+    y, _ = sf.read(OUT / "son2-note.wav", dtype="float32"); M = np.stack([music.ravel(), J.ravel(), note.ravel()], 1); coef, *_ = np.linalg.lstsq(M, y.ravel(), rcond=None)
+    err = float(np.sqrt(((M @ coef - y.ravel()) ** 2).mean()) / np.sqrt((y ** 2).mean())); g = lambda c, ref: 20 * np.log10(abs(c) / abs(ref)); e_n, e_m = g(coef[2], coef[1]), g(coef[0], coef[1])
+    nm = note.mean(1); heard = float(np.argmax(np.abs(nm) > np.abs(nm).max() * 10 ** (NP["noteOnsetThresholdDb"] / 20))) / SR
+    ok = y.shape == (A.N3, 2) and err < 2e-3 and np.abs(y).max() < 0.99 and abs(e_n - (N2["noteDb"] - N2["effectsDb"])) < 0.1 and abs(e_m - (N2["musicDb"] - N2["effectsDb"])) < 0.1 and abs(heard - N2["onset"]) < 0.06; bad += not ok
+    print(("ok   " if ok else "FAIL ") + f"son2-note: samples {len(y)}, error {err:.5f}, note vs effects {e_n:+.2f} dB, note heard at {heard:.3f} s (wanted {N2['onset']:.3f}), music vs effects {e_m:+.2f} dB")
+    sys.exit(1 if bad else 0)
+
+if __name__ == "__main__":
+    check("--red" in sys.argv) if "--check" in sys.argv else build()

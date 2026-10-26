@@ -1,0 +1,51 @@
+{
+ "inputs": {
+  "ghibli note": {
+   "lufsBefore": -19.1,
+   "gainDb": -3.9,
+   "lufsAfter": -23.0,
+   "peakDb": -9.01
+  },
+  "music 0-2s": {
+   "lufsBefore": -31.5,
+   "gainDb": 8.5,
+   "lufsAfter": -23.0,
+   "peakDb": -10.65
+  },
+  "sfx1-B1s": {
+   "lufsBefore": -21.4,
+   "gainDb": -1.6,
+   "lufsAfter": -23.0,
+   "peakDb": -7.7
+  },
+  "sfx2-G2": {
+   "lufsBefore": -23.0,
+   "gainDb": 0.0,
+   "lufsAfter": -23.0,
+   "peakDb": -12.42
+  }
+ },
+ "mixes": {
+  "son1-note-b1": {
+   "name": "Note dès la première seconde (0 s)",
+   "noteStartsAt": 0.0,
+   "samples": 144000,
+   "lufs": -24.0,
+   "peakDb": -9.1
+  },
+  "son1-note-b2": {
+   "name": "Note à 0,2 s",
+   "noteStartsAt": 0.2,
+   "samples": 144000,
+   "lufs": -24.0,
+   "peakDb": -9.3
+  },
+  "son1-note-b3": {
+   "name": "Note avec la première lueur sur le R",
+   "noteStartsAt": 0.417,
+   "samples": 144000,
+   "lufs": -24.0,
+   "peakDb": -9.5
+  }
+ }
+}

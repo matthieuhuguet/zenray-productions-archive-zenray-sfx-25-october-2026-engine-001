@@ -1,5 +1,5 @@
 # 26 October 2026: assembles the 6 s film audio (see params/assembly.json for the why and every number).
-# Writes out/assembly/{video-0-2s,video-3-6s,video-0-6s}.wav (the cuts, 0.33 s fades; the first cut length is firstEnd), out/assembly/son1-v1..v3.wav (film 0-3 s) and
+# Writes out/assembly/{video-0-2s,video-3-5s,video-0-6s}.wav (the cuts, 0.33 s fades; the first cut length is firstEnd), out/assembly/son1-v1..v3.wav (film 0-3 s) and
 # son2-v1..v3.wav (film 3-6 s), plus out/assembly/measures.json. --check verifies, --check --red must fail.
 # FR : assemble l'audio du film de 6 s : coupes de la vidéo, son 1 et son 2 en trois versions chacun.
 import json, re, subprocess, sys
@@ -9,9 +9,10 @@ import numpy as np, soundfile as sf
 P = json.loads((ROOT / "params/assembly.json").read_text()); SR = 48000; N3 = 3 * SR; OUT = ROOT / "out/assembly"; OUT.mkdir(parents=True, exist_ok=True)
 db = lambda x: 10 ** (x / 20)
 
-def fade(y, s):
-    y = y.copy(); n = int(round(s * SR)); r = np.sin(0.5 * np.pi * np.linspace(0, 1, n)) ** 2   # raised sine: no click at either end
-    y[:n] *= r[:, None]; y[-n:] *= r[::-1, None]; return y
+def fade(y, s, s_out=None):
+    y = y.copy(); n = int(round(s * SR)); m = int(round((s if s_out is None else s_out) * SR))
+    r = np.sin(0.5 * np.pi * np.linspace(0, 1, n)) ** 2; ro = np.sin(0.5 * np.pi * np.linspace(0, 1, m)) ** 2    # raised sine: no click at either end
+    y[:n] *= r[:, None]; y[-m:] *= ro[::-1, None]; return y
 
 def lufs(y):
     f = OUT / "_t.wav"; sf.write(f, y, SR, subtype="FLOAT")
@@ -39,7 +40,7 @@ def normalise(y, name, log):
 
 def inputs(first):
     V, sr = sf.read(ROOT / P["source"], dtype="float32"); assert sr == SR and V.shape == (6 * SR, 2)
-    cuts = {f"video-0-{first:g}s": fade(V[:int(round(first * SR))], P["fade"]), "video-3-6s": fade(V[N3:], P["fade"]), "video-0-6s": fade(V, P["fade"])}
+    cuts = {f"video-0-{first:g}s": fade(V[:int(round(first * SR))], P["fade"]), "video-3-5s": fade(V[int(round(P["second"]["start"] * SR)):int(round(P["second"]["end"] * SR))], P["second"]["fadeIn"], P["second"]["fadeOut"]), "video-0-6s": fade(V, P["fade"])}
     return cuts, load("b1s"), load("g2"), load("j2")
 
 def pad3(y):
@@ -48,10 +49,10 @@ def pad3(y):
 def build():
     first, out = args(); cuts, b1s, g2, j2 = inputs(first); rows, log = {}, {}
     for k, y in cuts.items(): sf.write(out / f"{k}.wav", y, SR, subtype="PCM_24")
-    n = {"music1": normalise(cuts[f"video-0-{first:g}s"], "music 0-%gs" % first, log), "music2": normalise(cuts["video-3-6s"], "music 3-6s", log),
+    n = {"music1": normalise(cuts[f"video-0-{first:g}s"], "music 0-%gs" % first, log), "music2": normalise(cuts["video-3-5s"], "music 3-5s", log),
          "b1s": normalise(mono_to_stereo(b1s), "sfx1-B1s", log), "g2": normalise(mono_to_stereo(g2), "sfx2-G2", log), "j2": normalise(mono_to_stereo(j2), "sfx2-J2", log)}
     sfx1 = place(n["b1s"][:, 0], P["b1sStart"]) + db(P["g2UnderB1sDb"]) * place(n["g2"][:, 0], 0.0)
-    stems = {"son1": {"music": pad3(n["music1"]), "sfx": mono_to_stereo(sfx1)}, "son2": {"music": n["music2"], "sfx": n["j2"]}}
+    stems = {"son1": {"music": pad3(n["music1"]), "sfx": mono_to_stereo(sfx1)}, "son2": {"music": pad3(n["music2"]), "sfx": n["j2"]}}
     for sname, st in stems.items():
         for vk, v in P["versions"].items():
             mix = st["music"] * db(v["musicDb"]) + st["sfx"] * db(v["sfxDb"]); mix = mix * db(P["finalLufs"] - lufs(mix))
@@ -65,12 +66,12 @@ def check(red):
     """(1) every input, normalised, sits at inputLufs; (2) every mix equals gain-weighted music + effects (least squares on the normalised stems), 144000 samples, no clip.
     --red skips the normalisation of the music (the bug Matthieu heard) and shifts the effects by one sample: must fail."""
     first, out = args(); cuts, b1s, g2, j2 = inputs(first); log = {}; bad = 0
-    n = {"music1": normalise(cuts[f"video-0-{first:g}s"], "m1", log), "music2": normalise(cuts["video-3-6s"], "m2", log), "b1s": normalise(mono_to_stereo(b1s), "b1s", log), "g2": normalise(mono_to_stereo(g2), "g2", log), "j2": normalise(mono_to_stereo(j2), "j2", log)}
+    n = {"music1": normalise(cuts[f"video-0-{first:g}s"], "m1", log), "music2": normalise(cuts["video-3-5s"], "m2", log), "b1s": normalise(mono_to_stereo(b1s), "b1s", log), "g2": normalise(mono_to_stereo(g2), "g2", log), "j2": normalise(mono_to_stereo(j2), "j2", log)}
     for k, v in log.items():
         ok = abs(v["lufsAfter"] - P["inputLufs"]) < 0.15; bad += not ok; print(("ok   " if ok else "FAIL ") + f"input {k}: {v['lufsBefore']} -> {v['lufsAfter']} LUFS")
-    if red: n["music1"], n["music2"] = cuts[f"video-0-{first:g}s"], cuts["video-3-6s"]     # unnormalised music, as in the first round
+    if red: n["music1"], n["music2"] = cuts[f"video-0-{first:g}s"], cuts["video-3-5s"]     # unnormalised music, as in the first round
     sfx1 = place(n["b1s"][:, 0], P["b1sStart"]) + db(P["g2UnderB1sDb"]) * place(n["g2"][:, 0], 0.0)
-    st = {"son1": (pad3(n["music1"]), mono_to_stereo(sfx1)), "son2": (n["music2"], n["j2"])}
+    st = {"son1": (pad3(n["music1"]), mono_to_stereo(sfx1)), "son2": (pad3(n["music2"]), n["j2"])}
     for sname, (m, s) in st.items():
         for vk, v in P["versions"].items():
             y, _ = sf.read(out / f"{sname}-v{vk}.wav", dtype="float32"); A = np.stack([m.ravel(), s.ravel()], 1); coef, *_ = np.linalg.lstsq(A, y.ravel(), rcond=None)
