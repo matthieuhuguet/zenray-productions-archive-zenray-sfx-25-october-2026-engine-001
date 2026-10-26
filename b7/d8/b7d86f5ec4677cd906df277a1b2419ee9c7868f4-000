@@ -1,0 +1,21 @@
+{
+  "_doc": "26 October 2026: where ZenRay SFX finds Motion Design projects and how it measures a light-based film. Thresholds are on the 240x135 analysis frames (0 to 255). FR : o\u00f9 SFX trouve les projets Motion Design et comment il mesure un film de lumi\u00e8re.",
+  "projectsDir": "/Users/zenray/.claude/tmp/tmp-zenray-motion-design/motion-projects",
+  "motionRepo": "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRayMotionDesign",
+  "motionPython": "/Users/zenray/.venvs/zenray-motion/bin/python",
+  "assetsProject": "zenray-motion-design",
+  "measure": {
+    "lightFloor": 12,
+    "brightLevel": 200,
+    "firstLightL": 8,
+    "fullLightL": 200,
+    "lensExtraRows": 6,
+    "spreadCols": 100,
+    "blueOnset": 8,
+    "flareGoneBright": 0.1,
+    "tileRise": 1.15,
+    "whiteBright": 3.0,
+    "steadyDLum": 0.02,
+    "blackLum": 1.0
+  }
+}

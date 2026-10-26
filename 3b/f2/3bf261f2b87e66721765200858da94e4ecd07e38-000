@@ -204,15 +204,23 @@ def compile_recipe(brief: dict, bands: int = 24, lo: float = 30.0, hi: float = 2
                     shape = shape + n.get("tilt", 0.0) * (c - centre)
                 grid.append(n["level"] + dd + np.maximum(shape, -100))
             # A noise level is a band power per STFT bin of 1024 (the same unit as the analysed grids).
+            # A noise layer holds its first and last keys outside its span (np.interp clamps): close the event with silent
+            # keys, or its -60 dB floor hisses before it starts and after it ends (found by Scripts/CheckCues.py, 26 October 2026).
+            keys, cols = list(et), [g for g in grid]
+            silent = np.full_like(cols[0], SILENT_DB)
+            if keys[0] > 0.004:
+                keys, cols = [keys[0] - 0.002] + keys, [silent] + cols
+            keys, cols = keys + [keys[-1] + 0.002], cols + [silent]
             noise_layers.append({"type": "noise", "name": "event", "lo": lo, "hi": hi, "nFft": 1024, "hop": 128,
-                                 "times": [round(v, 5) for v in et],
-                                 "grid": np.round(np.array(grid).T + NOISE_REF_DB, 2).tolist()})
+                                 "times": [round(v, 5) for v in keys],
+                                 "grid": np.round(np.array(cols).T + NOISE_REF_DB, 2).tolist()})
     layers = noise_layers + ([{"type": "partials", "name": "tones", "tracks": tracks}] if tracks else [])
     return {"name": brief.get("name", "sfx"), "seconds": seconds, "seed": brief.get("seed", 0), "gainDb": 0.0,
             "layers": layers}
 
 
 # 0 dB noise level = a band power that sounds about as loud as a 0 dB (full scale) sine: 20 log10(sum(hann)/2) dB.
+SILENT_DB = -200.0  # a key this low is digital silence once the reference level is added
 NOISE_REF_DB = 20 * math.log10(np.hanning(1024).sum() / 2)
 
 

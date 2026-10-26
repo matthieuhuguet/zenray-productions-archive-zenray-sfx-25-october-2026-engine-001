@@ -1,0 +1,49 @@
+# 26 October 2026: proves that every proposal lands on its film cues, measured on the rendered audio, not on the brief.
+# For each anchor (a cue, with the track start) the level in the 30 ms after the cue must exceed the level in the 30 ms
+# before it by at least JUMP_DB at some instant within +-TOL_S of the cue (a jump from silence counts). Green: all pass.
+# Red (--shift 0.12): every track delayed by 120 ms, the check must FAIL. FR : preuve du calage mesurée sur l'audio rendu.
+# Roles: hit (onset or envelope peak at the cue), onset (broadband jump >= 8 dB within +-30 ms), begin (silence before the cue, sound within 0.5 s after), peak (the smoothed
+# envelope peaks within +-40 ms of the cue), band (jump >= 8 dB in the band above 2 kHz, for a tear that rides over a bed).
+# Usage: /usr/bin/python3 Scripts/CheckCues.py <film-id> [--shift seconds]
+import json, sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+import numpy as np, soundfile as sf
+JUMP_DB, TOL_S, WIN_S, FLOOR_DB = 8.0, 0.030, 0.030, -90.0
+film = sys.argv[1]; shift = float(sys.argv[sys.argv.index("--shift") + 1]) if "--shift" in sys.argv else 0.0
+spec = json.loads((ROOT / "params/proposals" / f"{film}.json").read_text()); cues = spec["cues"]
+from scipy.signal import butter, sosfilt
+def level(y, a, b, sr):
+    seg = y[max(0, int(a * sr)):max(0, int(b * sr))]
+    return FLOOR_DB if len(seg) == 0 else max(FLOOR_DB, 20 * np.log10(np.sqrt(np.mean(seg ** 2)) + 1e-12))
+def jump(y, t, sr):
+    best = (-999.0, None)
+    for dt in np.arange(-TOL_S, TOL_S + 1e-9, 0.005):
+        tt = t + dt; j = level(y, tt, tt + WIN_S, sr) - level(y, tt - WIN_S, tt, sr)
+        if j > best[0]: best = (j, dt)
+    return best
+bad = 0
+for tid, tr in spec["tracks"].items():
+    for k in tr["proposals"]:
+        y, sr = sf.read(ROOT / "out/proposals" / film / f"{tid}-{k}.wav"); start = tr["start"] + shift
+        hi = sosfilt(butter(4, 2000, "highpass", fs=sr, output="sos"), y)
+        for a in tr["anchors"]:
+            t = cues[a["cue"]] - start; role = a["role"]
+            if role == "onset":
+                j, dt = jump(y, t, sr); ok = j >= JUMP_DB; msg = f"jump {j:6.1f} dB at {dt*1000:+4.0f} ms"
+            elif role == "band":
+                j, dt = jump(hi, t, sr); ok = j >= JUMP_DB; msg = f"jump {j:6.1f} dB (above 2 kHz) at {dt*1000:+4.0f} ms"
+            elif role == "begin":
+                before = level(y, t - 0.25, t - 0.02, sr); after = max(level(y, x, x + 0.02, sr) for x in np.arange(t, t + 0.8, 0.01))
+                ok = before <= -75 and after >= -55; msg = f"before {before:6.1f} dB, loudest within 0.8 s after {after:6.1f} dB"
+            elif role == "hit":
+                j, dt = jump(y, t, sr)
+                xs = np.arange(t - 0.3, t + 0.3, 0.01); env = np.array([level(y, x, x + 0.02, sr) for x in xs]); pk = xs[int(np.argmax(env))] + 0.01
+                ok = j >= JUMP_DB or abs(pk - t) <= 0.04; msg = f"jump {j:5.1f} dB, envelope peak {1000*(pk - t):+4.0f} ms"
+            else:  # peak
+                env = np.array([level(y, x, x + 0.02, sr) for x in np.arange(t - 0.3, t + 0.3, 0.01)])
+                xs = np.arange(t - 0.3, t + 0.3, 0.01); pk = xs[int(np.argmax(env))] + 0.01
+                ok = abs(pk - t) <= 0.04; msg = f"envelope peaks {1000*(pk - t):+4.0f} ms from the cue"
+            bad += not ok
+            print(f"{tid}-{k:1} {a['cue']:16} {role:6} {msg}  {'ok' if ok else 'FAIL'}")
+print("failures", bad); sys.exit(1 if bad else 0)

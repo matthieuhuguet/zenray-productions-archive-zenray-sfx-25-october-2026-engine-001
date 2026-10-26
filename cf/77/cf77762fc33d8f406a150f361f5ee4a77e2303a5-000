@@ -1,0 +1,37 @@
+{
+ "project": "zenray-sony-playstation-d-ppm",
+ "date": "26 October 2026",
+ "fps": 30.0,
+ "duration": 6.0,
+ "cues": {
+  "firstLight": 0.417,
+  "lightFull": 0.85,
+  "lens": 1.667,
+  "wordSpread": 1.517,
+  "blueOnset": 2.183,
+  "beam": 2.333,
+  "flarePeak": 3.15,
+  "flareGone": 3.467,
+  "tileAppears": 3.733,
+  "whiteFlip": 3.883,
+  "settle": 4.617,
+  "fadeStart": 5.283,
+  "fadeEnd": 5.95,
+  "aberrationStart": 4.417,
+  "aberrationEnd": 5.417
+ },
+ "scenes": [
+  {
+   "id": "b01",
+   "template": "sony-open",
+   "start": 0.0,
+   "end": 2.1667
+  },
+  {
+   "id": "b02",
+   "template": "ps-open",
+   "start": 2.1667,
+   "end": 6.0
+  }
+ ]
+}

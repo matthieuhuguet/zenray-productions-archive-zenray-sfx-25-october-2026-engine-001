@@ -1,0 +1,90 @@
+# 26 October 2026: the bridge between ZenRay SFX and ZenRay Motion Design. A Motion project is a timeline of scenes;
+# SFX reads it (project.json, dense snapshots), measures the instants a sound designer needs (first light, lens,
+# flare, tile, white flip, fade), writes them as a STORYBOARD in markdown, and binds its sound tracks to the project
+# through a sidecar file. Nothing of the Motion project itself is rewritten.
+# FR : le pont entre ZenRay SFX et ZenRay Motion Design. Lit la timeline, mesure les repères, écrit le storyboard en
+# markdown et lie les pistes sonores au projet par un fichier à côté ; le projet Motion lui-même n'est jamais réécrit.
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import numpy as np
+
+CFG = json.loads((Path(__file__).resolve().parents[1] / "params" / "motion.json").read_text())
+PROJECTS = Path(CFG["projectsDir"])
+
+
+def project_dir(pid: str) -> Path:
+    if "/" in pid or pid.startswith("."):
+        raise ValueError(f"not a project id: {pid!r}")
+    d = PROJECTS / pid
+    if not (d / "project.json").is_file():
+        raise FileNotFoundError(f"no Motion project {pid} in {PROJECTS}")
+    return d
+
+
+def read_project(pid: str) -> dict:
+    return json.loads((project_dir(pid) / "project.json").read_text())
+
+
+def scene_table(p: dict) -> list[dict]:
+    t, out = 0.0, []
+    for s in p["scenes"]:
+        out.append({"id": s["id"], "template": s.get("template"), "start": round(t, 4), "end": round(t + float(s["duration"]), 4)})
+        t += float(s["duration"])
+    return out
+
+
+# ------------------------------------------------------------------ measuring
+def curves(frames: np.ndarray, times: np.ndarray) -> dict:
+    """Per-frame curves of a (n, h, w, 3) uint8 stack: max luminance, mean luminance, blue excess, bright share,
+    extent of the lit area (rows and columns above lightFloor)."""
+    c = CFG["measure"]
+    F = frames.astype(np.float32)
+    L = F.mean(3)
+    lit = L > c["lightFloor"]
+    cols = lit.any(1); rows = lit.any(2)
+    def span(m):
+        idx = [np.nonzero(r)[0] for r in m]
+        return np.array([(i.max() - i.min() + 1) if len(i) else 0 for i in idx])
+    return {"t": times, "maxL": L.max((1, 2)), "lum": L.mean((1, 2)), "blue": (F[..., 2] - F[..., 0]).mean((1, 2)),
+            "bright": (L > c["brightLevel"]).mean((1, 2)) * 100, "w": span(cols), "h": span(rows)}
+
+
+def first(c: dict, mask: np.ndarray, after: float = 0.0):
+    idx = np.nonzero(mask & (c["t"] >= after))[0]
+    return float(c["t"][idx[0]]) if len(idx) else None
+
+
+def detect_cues(c: dict, post: dict | None = None) -> dict:
+    """The instants of a light-based film. Each is a measured frame time (seconds of the film), or None."""
+    m = CFG["measure"]; t = c["t"]; cues = {}
+    cues["firstLight"] = first(c, c["maxL"] > m["firstLightL"])
+    cues["lightFull"] = first(c, c["maxL"] > m["fullLightL"])
+    base_h = float(np.median(c["h"][(t > (cues["lightFull"] or 0)) & (t < (cues["lightFull"] or 0) + 0.4)])) if cues["lightFull"] else 0
+    cues["lens"] = first(c, c["h"] > base_h + m["lensExtraRows"], after=cues["lightFull"] or 0)
+    cues["wordSpread"] = first(c, c["w"] > m["spreadCols"], after=cues["lightFull"] or 0)
+    cues["blueOnset"] = first(c, c["blue"] > m["blueOnset"])
+    cues["beam"] = first(c, c["w"] >= c["w"].max() - 2, after=cues["blueOnset"] or 0)
+    b0 = cues["blueOnset"] or 0
+    win = (t >= b0) & (c["lum"] > 0)
+    peak = int(np.argmax(np.where(win, c["lum"], -1)))
+    cues["flarePeak"] = float(t[peak])
+    cues["flareGone"] = first(c, c["bright"] < m["flareGoneBright"], after=cues["flarePeak"])
+    quiet = (cues["flareGone"] or cues["flarePeak"])
+    # the tile: after the flare is gone the light dips to a trough, then rises again as the glass plate comes in
+    seg = np.nonzero((t >= quiet) & (t < quiet + 0.6))[0]
+    trough = seg[int(np.argmin(c["lum"][seg]))] if len(seg) else None
+    cues["tileAppears"] = first(c, c["lum"] > c["lum"][trough] * m["tileRise"], after=float(t[trough])) if trough is not None else None
+    cues["whiteFlip"] = first(c, c["bright"] > m["whiteBright"], after=cues["tileAppears"] or quiet)
+    flip = cues["whiteFlip"] or quiet
+    steady = np.nonzero((np.abs(np.gradient(c["lum"])) < m["steadyDLum"]) & (t > flip + 0.2))[0]
+    cues["settle"] = float(t[steady[0]]) if len(steady) else None
+    s = cues["settle"] or flip
+    ref = float(c["lum"][(t >= s) & (t < s + 0.2)].mean())
+    cues["fadeStart"] = first(c, c["lum"] < ref * 0.97, after=s + 0.3)
+    cues["fadeEnd"] = first(c, c["lum"] < m["blackLum"], after=cues["fadeStart"] or s)
+    if post and post.get("abLen"):
+        cues["aberrationStart"] = float(post["abStart"]); cues["aberrationEnd"] = float(post["abStart"] + post["abLen"])
+    return {k: (None if v is None else round(v, 3)) for k, v in cues.items()}

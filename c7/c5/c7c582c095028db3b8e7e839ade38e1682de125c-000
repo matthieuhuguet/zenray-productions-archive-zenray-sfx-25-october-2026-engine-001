@@ -1,0 +1,32 @@
+# 26 October 2026: the visual signature of the proposals on the FILM timeline: for each proposal a spectrogram placed at its
+# real start, the level envelope, and a vertical line at every measured cue. FR : signatures visuelles des propositions sur la timeline du film.
+# Usage: /usr/bin/python3 Scripts/ProposalSheet.py <film-id> [out.png]
+import json, sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT))
+import numpy as np, soundfile as sf, librosa
+from PIL import Image, ImageDraw, ImageFont
+film = sys.argv[1]; dst = Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT / "out/proposals" / film / "sheet.png"
+spec = json.loads((ROOT / "params/proposals" / f"{film}.json").read_text()); cues = spec["cues"]
+meta = json.loads((ROOT / "out/motion" / film / "cues.json").read_text()); dur = meta["duration"]
+W, H, LAB = 1500, 150, 26
+font = ImageFont.truetype("/Users/zenray/Library/Fonts/InterVariable.ttf", 15) if Path("/Users/zenray/Library/Fonts/InterVariable.ttf").exists() else ImageFont.load_default()
+rows = [(tid, k, pr["name"], tr["start"]) for tid, tr in spec["tracks"].items() for k, pr in tr["proposals"].items()]
+sheet = Image.new("RGB", (W, len(rows) * (H + LAB) + 8), (14, 14, 16)); d = ImageDraw.Draw(sheet)
+for i, (tid, k, name, start) in enumerate(rows):
+    y0 = i * (H + LAB) + 4
+    d.text((6, y0 + 3), f"{tid}-{k}   {name}   (piste à {start:.2f} s)", fill=(236, 235, 231), font=font)
+    y, sr = sf.read(ROOT / "out/proposals" / film / f"{tid}-{k}.wav")
+    M = librosa.power_to_db(librosa.feature.melspectrogram(y=y.astype(np.float32), sr=sr, n_fft=2048, hop_length=256, n_mels=128), ref=1.0)
+    a = np.clip((M + 90) / 90, 0, 1)[::-1]
+    img = Image.fromarray((np.stack([a ** 0.6, a ** 1.5, a ** 3], -1) * 255).astype(np.uint8)).resize((int(W * len(y) / sr / dur), H - 34))
+    d.rectangle([0, y0 + LAB, W, y0 + LAB + H - 34], fill=(0, 0, 0)); sheet.paste(img, (int(W * start / dur), y0 + LAB))
+    env = np.sqrt(np.convolve(y ** 2, np.ones(480) / 480, "same")); env = 20 * np.log10(env + 1e-6)
+    for xx in range(0, len(y), 480):
+        px = int(W * (start + xx / sr) / dur); hh = int(np.clip((env[xx] + 60) / 60, 0, 1) * 30)
+        d.line([px, y0 + LAB + H - 4, px, y0 + LAB + H - 4 - hh], fill=(120, 190, 255))
+    for name_, t in cues.items():
+        if t is None: continue
+        px = int(W * t / dur); d.line([px, y0 + LAB, px, y0 + LAB + H - 34], fill=(255, 210, 90) if name_ in ("lens", "flarePeak", "whiteFlip", "aberrationStart") else (90, 90, 100))
+        if i == 0: d.text((px + 2, 2), name_, fill=(255, 210, 90) if name_ in ("lens", "flarePeak", "whiteFlip", "aberrationStart") else (120, 120, 130), font=font)
+dst.parent.mkdir(parents=True, exist_ok=True); sheet.save(dst); print(dst)

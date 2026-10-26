@@ -1,0 +1,33 @@
+# 26 October 2026: renders every proposal of a film spec (params/proposals/<film>.json) to a WAV at its track start,
+# peak-normalised to -3 dBFS, plus a spectrogram PNG and a measures file (peak, RMS, length, onset times).
+# FR : rend chaque proposition en WAV, normalisée à -3 dBFS de crête, avec spectrogramme et mesures.
+# Usage: /usr/bin/python3 Scripts/RenderProposals.py <film-id>
+import json, re, subprocess, sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT))
+import numpy as np, soundfile as sf
+from zrsfx import compose as C
+SR, PEAK_DB = 48000, -3.0
+film = sys.argv[1]
+spec = json.loads((ROOT / "params/proposals" / f"{film}.json").read_text())
+out = ROOT / "out/proposals" / film; out.mkdir(parents=True, exist_ok=True)
+def lufs(f):
+    """Integrated loudness (EBU R128) by ffmpeg ebur128: the number every proposal is balanced on."""
+    r = subprocess.run(["ffmpeg", "-nostats", "-i", str(f), "-af", "ebur128=peak=true", "-f", "null", "-"], capture_output=True, text=True)
+    return float(re.findall(r"I:\s+(-?\d+\.\d+) LUFS", r.stderr)[-1])
+
+rows, raw = {}, {}
+for tid, tr in spec["tracks"].items():
+    for k, pr in tr["proposals"].items():
+        y = C.render_any(pr["brief"], SR)
+        y = y / max(np.abs(y).max(), 1e-9) * 10 ** (PEAK_DB / 20)
+        f = out / f"{tid}-{k}.wav"; sf.write(f, y.astype(np.float32), SR, subtype="PCM_24"); raw[(tid, k)] = (f, y, tr)
+# Balance: every proposal gets the loudness of the quietest one at its peak limit, so choosing between A, B and C is never a choice of volume.
+meas = {key: lufs(v[0]) for key, v in raw.items()}; target = min(meas.values())
+for (tid, k), (f, y, tr) in raw.items():
+    g = target - meas[(tid, k)]; y2 = y * 10 ** (g / 20)
+    sf.write(f, y2.astype(np.float32), SR, subtype="PCM_24")
+    rows[f"{tid}-{k}"] = {"file": str(f), "start": tr["start"], "seconds": round(len(y2) / SR, 3), "peakDb": round(float(20 * np.log10(np.abs(y2).max())), 2),
+                          "lufs": round(lufs(f), 2), "gainAppliedDb": round(g, 2)}
+    print(f"{tid}-{k}", {a: b for a, b in rows[f"{tid}-{k}"].items() if a != "file"})
+(out / "measures.json").write_text(json.dumps(rows, indent=1))

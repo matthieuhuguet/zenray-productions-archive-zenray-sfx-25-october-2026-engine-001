@@ -1,0 +1,29 @@
+# 26 October 2026: dense low-resolution snapshots of a ZenRay Motion Design project, one HyperFrames call.
+# Run with the Motion venv: /Users/zenray/.venvs/zenray-motion/bin/python -I Scripts/MotionSnap.py <project-id> <step-seconds> <out.npz>
+# FR : images basse résolution d'un projet Motion Design (un seul appel HyperFrames), pour mesurer les repères du film.
+import sys, tempfile, shutil
+from pathlib import Path
+import numpy as np
+from PIL import Image
+MOTION = "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRayMotionDesign/motion"  # -I ignores PYTHONPATH
+sys.path.insert(0, MOTION)
+import server  # ZenRayMotionDesign/motion/server.py
+
+WIDTH, HEIGHT = 240, 135  # analysis size, enough for light masses and letter extents
+
+pid, step, out = sys.argv[1], float(sys.argv[2]), Path(sys.argv[3])
+p = server.read_project(pid); dur = sum(s["duration"] for s in p["scenes"])
+ts = [round(i * step, 4) for i in range(int((dur - 0.02) / step) + 1)]
+work = Path(tempfile.mkdtemp(prefix="zrsfx-snap-"))
+try:
+    page = server.cook(pid, work / "page"); snaps = work / "snaps"
+    r = server.hyperframes(page, "snapshot", "--at", ",".join(f"{t:.3f}" for t in ts), "--no-end", "-o", str(snaps), timeout=1800)
+    # the file index is numeric, never sort it as text (frame-100 sorts before frame-11)
+    files = sorted(snaps.glob("frame-*.png"), key=lambda f: int(f.name.split("-")[1]))
+    if r.returncode or len(files) != len(ts):
+        raise SystemExit(f"snapshot failed: {len(files)} files for {len(ts)} times, code {r.returncode}")
+    frames = np.stack([np.asarray(Image.open(f).convert("RGB").resize((WIDTH, HEIGHT))) for f in files])
+    np.savez_compressed(out, frames=frames, times=np.array(ts), fps=float(p.get("fps") or 30), duration=dur, project=pid)
+    print(out, frames.shape)
+finally:
+    shutil.rmtree(work, ignore_errors=True)

@@ -1,0 +1,50 @@
+{
+ "sfx1-A": {
+  "file": "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/out/proposals/zenray-sony-playstation-d-ppm/sfx1-A.wav",
+  "start": 0.35,
+  "seconds": 2.45,
+  "peakDb": -4.6,
+  "lufs": -24.4,
+  "gainAppliedDb": -1.6
+ },
+ "sfx1-B": {
+  "file": "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/out/proposals/zenray-sony-playstation-d-ppm/sfx1-B.wav",
+  "start": 0.35,
+  "seconds": 2.45,
+  "peakDb": -3.0,
+  "lufs": -24.4,
+  "gainAppliedDb": 0.0
+ },
+ "sfx1-C": {
+  "file": "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/out/proposals/zenray-sony-playstation-d-ppm/sfx1-C.wav",
+  "start": 0.35,
+  "seconds": 2.45,
+  "peakDb": -4.4,
+  "lufs": -24.4,
+  "gainAppliedDb": -1.4
+ },
+ "sfx2-A": {
+  "file": "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/out/proposals/zenray-sony-playstation-d-ppm/sfx2-A.wav",
+  "start": 3.0,
+  "seconds": 3.0,
+  "peakDb": -3.9,
+  "lufs": -24.4,
+  "gainAppliedDb": -0.9
+ },
+ "sfx2-B": {
+  "file": "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/out/proposals/zenray-sony-playstation-d-ppm/sfx2-B.wav",
+  "start": 3.0,
+  "seconds": 3.0,
+  "peakDb": -6.0,
+  "lufs": -24.4,
+  "gainAppliedDb": -3.0
+ },
+ "sfx2-C": {
+  "file": "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/out/proposals/zenray-sony-playstation-d-ppm/sfx2-C.wav",
+  "start": 3.0,
+  "seconds": 3.0,
+  "peakDb": -7.0,
+  "lufs": -24.4,
+  "gainAppliedDb": -4.0
+ }
+}

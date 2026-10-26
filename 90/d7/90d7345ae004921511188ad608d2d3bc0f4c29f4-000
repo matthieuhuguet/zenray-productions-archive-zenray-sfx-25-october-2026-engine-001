@@ -1,0 +1,140 @@
+# Storyboard, ZenRay : Sony puis PlayStation, rythme D (6 s) (26 October 2026)
+
+Projet Motion Design `zenray-sony-playstation-d-ppm`, format 16x9, 30 images par seconde, durée 6.00 s. Repères mesurés sur les images réelles par `Scripts/Storyboard.py` (26 October 2026).
+
+## Scènes (26 October 2026)
+
+| Scène | Gabarit | Début | Fin | Rôle |
+|---|---|---|---|---|
+| b01 | sony-open | 0.00 s | 2.17 s | Acte 1, révélation façon Sony (ZENRAY sort du noir) |
+| b02 | ps-open | 2.17 s | 6.00 s | Acte 2, ouverture façon PlayStation (verre bleu, comète, tuile) |
+
+## Repères mesurés (26 October 2026)
+
+| Repère | Instant | Image | Ce qui se passe |
+|---|---|---|---|
+| firstLight | 0.417 s | 13 | Première lueur sur le R. |
+| lightFull | 0.850 s | 26 | Le R est pleinement éclairé. |
+| wordSpread | 1.517 s | 46 | La lumière gagne les lettres voisines. |
+| lens | 1.667 s | 50 | La lentille (orbe rond) apparaît sur le R. |
+| blueOnset | 2.183 s | 65 | Début de l'acte 2 : le fond et le mot passent au bleu. |
+| beam | 2.333 s | 70 | La ligne de lumière traverse tout le cadre. |
+| flarePeak | 3.150 s | 94 | Le flou de lumière (la comète) est à son maximum. |
+| flareGone | 3.467 s | 104 | La comète a disparu. |
+| tileAppears | 3.733 s | 112 | La plaque de verre à contour bleu apparaît. |
+| whiteFlip | 3.883 s | 116 | La plaque devient une tuile blanche (la marque ZenRay se révèle). |
+| aberrationStart | 4.417 s | 133 | Début de l'impulsion d'aberration chromatique. |
+| settle | 4.617 s | 139 | Le cadre est stable. |
+| fadeStart | 5.283 s | 158 | Début du fondu final. |
+| aberrationEnd | 5.417 s | 163 | Fin de l'impulsion d'aberration chromatique. |
+| fadeEnd | 5.950 s | 178 | Noir complet. |
+
+## Seconde par seconde (26 October 2026)
+
+### 0 à 1 s (26 October 2026)
+
+Noir complet. Vers 0,42 s une première lueur froide effleure le R, dont le bord apparaît en gris métallique. Le reste du mot reste dans le noir.
+
+Mesure : luminance moyenne de 0.0 à 0.7, excès de bleu de 0.0 à 0.0, surface très claire de 0.0 à 0.0 %. Repères dans cette seconde : firstLight 0.42 s, lightFull 0.85 s.
+
+### 1 à 2 s (26 October 2026)
+
+La lumière est pleine sur le R vers 0,85 s. Elle glisse ensuite vers la droite (le A et le Y se dessinent en gris) puis, vers 1,52 s, vers la gauche : Z, E, N montent en gris sombre. Le mot entier est lisible à 1,6 s.
+
+Mesure : luminance moyenne de 0.7 à 6.3, excès de bleu de 0.0 à 0.9, surface très claire de 0.0 à 0.6 %. Repères dans cette seconde : wordSpread 1.52 s, lens 1.67 s.
+
+### 2 à 3 s (26 October 2026)
+
+La lentille : un orbe lumineux rond s'ouvre sur le R vers 1,67 s, avec des éclats minuscules, puis retombe. Fin de l'acte 1 à 2,17 s : coupe vers un fond bleu nuit, le mot ZENRAY passe au bleu verre et une ligne de lumière horizontale traverse tout le cadre vers 2,33 s.
+
+Mesure : luminance moyenne de 6.7 à 56.9, excès de bleu de 0.3 à 92.8, surface très claire de 0.0 à 2.5 %. Repères dans cette seconde : blueOnset 2.18 s, beam 2.33 s.
+
+### 3 à 4 s (26 October 2026)
+
+Le mot s'éclaire de plus en plus, la ligne de lumière s'épaissit, puis une comète blanche et bleue avale le mot : le flou de lumière culmine à 3,15 s et disparaît vers 3,47 s. Une plaque de verre à contour bleu entre en rotation vers 3,73 s.
+
+Mesure : luminance moyenne de 18.0 à 78.3, excès de bleu de 12.3 à 119.4, surface très claire de 0.0 à 8.9 %. Repères dans cette seconde : flarePeak 3.15 s, flareGone 3.47 s, tileAppears 3.73 s, whiteFlip 3.88 s.
+
+### 4 à 5 s (26 October 2026)
+
+La plaque tourne et se redresse : à 3,88 s elle bascule en tuile blanche avec la marque ZenRay au centre, ZENRAY s'écrit dessous. Le cadre se stabilise vers 4,6 s. Une impulsion d'aberration chromatique (franges rouge et bleue) démarre à 4,42 s.
+
+Mesure : luminance moyenne de 17.7 à 25.8, excès de bleu de 0.2 à 11.2, surface très claire de 4.9 à 8.4 %. Repères dans cette seconde : aberrationStart 4.42 s, settle 4.62 s.
+
+### 5 à 6 s (26 October 2026)
+
+La tuile blanche reste immobile avec ses franges de couleur jusqu'à 5,42 s, puis tout s'éteint par un fondu qui commence vers 5,28 s et atteint le noir à 5,95 s.
+
+Mesure : luminance moyenne de 0.1 à 17.7, excès de bleu de 0.0 à 0.2, surface très claire de 0.0 à 6.5 %. Repères dans cette seconde : fadeStart 5.28 s, aberrationEnd 5.42 s, fadeEnd 5.95 s.
+
+## Pistes sonores demandées (26 October 2026)
+
+- **sfx1** : Le premier SFX est cadencé au niveau où la lentille apparaît sur le R. (cadence : lens). (26 October 2026)
+- **sfx2** : Le second SFX est à placer à partir de 3 secondes : un effet de progression très classe, façon PlayStation et Kojima, sur l'apparition du logo, comme si ça chargeait dans une autre dimension. (cadence : 3.0). (26 October 2026)
+
+## Courbes de la lumière (26 October 2026)
+
+Luminance moyenne image par image (0 à 255), un point tous les 0,1 s :
+
+```
+ 0.00 s  lum    0.0  bleu    0.0  clair  0.00 %
+ 0.10 s  lum    0.0  bleu    0.0  clair  0.00 %
+ 0.20 s  lum    0.0  bleu    0.0  clair  0.00 %
+ 0.30 s  lum    0.0  bleu    0.0  clair  0.00 %
+ 0.40 s  lum    0.0  bleu    0.0  clair  0.00 %
+ 0.50 s  lum    0.1  bleu    0.0  clair  0.00 %
+ 0.60 s  lum    0.2  bleu    0.0  clair  0.00 %
+ 0.70 s  lum    0.3  bleu    0.0  clair  0.00 %
+ 0.80 s  lum    0.4  bleu    0.0  clair  0.00 %
+ 0.90 s  lum    0.6  bleu    0.0  clair  0.02 %
+ 1.00 s  lum    0.7  bleu    0.0  clair  0.05 %
+ 1.10 s  lum    0.9  bleu    0.0  clair  0.08 %
+ 1.20 s  lum    1.0  bleu    0.1  clair  0.12 %
+ 1.30 s  lum    1.2  bleu    0.1  clair  0.17 %
+ 1.40 s  lum    1.4  bleu    0.1  clair  0.17 %
+ 1.50 s  lum    1.6  bleu    0.1  clair  0.18 %
+ 1.60 s  lum    1.8  bleu    0.1  clair  0.19 %
+ 1.70 s  lum    2.7  bleu    0.5  clair  0.37 %
+ 1.80 s  lum    3.6  bleu    0.6  clair  0.34 %
+ 1.90 s  lum    5.2  bleu    0.8  clair  0.43 %
+ 2.00 s  lum    6.7  bleu    0.8  clair  0.76 %
+ 2.10 s  lum    7.8  bleu    0.3  clair  2.04 %
+ 2.20 s  lum   14.6  bleu   16.4  clair  2.53 %
+ 2.30 s  lum   15.1  bleu   19.9  clair  1.19 %
+ 2.40 s  lum   16.2  bleu   27.2  clair  0.02 %
+ 2.50 s  lum   16.6  bleu   30.3  clair  0.02 %
+ 2.60 s  lum   16.4  bleu   30.3  clair  0.02 %
+ 2.70 s  lum   19.5  bleu   36.2  clair  0.09 %
+ 2.80 s  lum   31.0  bleu   53.6  clair  0.71 %
+ 2.90 s  lum   41.5  bleu   69.3  clair  1.29 %
+ 3.00 s  lum   60.5  bleu   97.9  clair  2.20 %
+ 3.10 s  lum   76.4  bleu  117.9  clair  3.28 %
+ 3.20 s  lum   71.5  bleu  109.7  clair  3.06 %
+ 3.30 s  lum   53.5  bleu   87.5  clair  1.57 %
+ 3.40 s  lum   47.6  bleu   82.5  clair  0.42 %
+ 3.50 s  lum   27.4  bleu   52.1  clair  0.00 %
+ 3.60 s  lum   20.0  bleu   35.9  clair  0.22 %
+ 3.70 s  lum   18.1  bleu   29.4  clair  0.45 %
+ 3.80 s  lum   25.7  bleu   28.4  clair  0.52 %
+ 3.90 s  lum   28.4  bleu   17.4  clair  5.69 %
+ 4.00 s  lum   25.8  bleu   11.2  clair  8.37 %
+ 4.10 s  lum   21.8  bleu    6.7  clair  7.21 %
+ 4.20 s  lum   19.8  bleu    3.9  clair  6.65 %
+ 4.30 s  lum   18.9  bleu    2.3  clair  6.61 %
+ 4.40 s  lum   18.3  bleu    1.3  clair  6.60 %
+ 4.50 s  lum   17.9  bleu    0.7  clair  4.97 %
+ 4.60 s  lum   17.7  bleu    0.2  clair  4.86 %
+ 4.70 s  lum   17.7  bleu    0.2  clair  4.86 %
+ 4.80 s  lum   17.7  bleu    0.2  clair  4.86 %
+ 4.90 s  lum   17.7  bleu    0.2  clair  4.86 %
+ 5.00 s  lum   17.7  bleu    0.2  clair  4.86 %
+ 5.10 s  lum   17.7  bleu    0.2  clair  4.86 %
+ 5.20 s  lum   17.5  bleu    0.2  clair  4.94 %
+ 5.30 s  lum   16.9  bleu    0.2  clair  5.90 %
+ 5.40 s  lum   15.7  bleu    0.2  clair  6.44 %
+ 5.50 s  lum   14.2  bleu    0.2  clair  0.04 %
+ 5.60 s  lum   12.1  bleu    0.1  clair  0.00 %
+ 5.70 s  lum    9.7  bleu    0.1  clair  0.00 %
+ 5.80 s  lum    6.7  bleu    0.1  clair  0.00 %
+ 5.90 s  lum    2.6  bleu    0.0  clair  0.00 %
+```

@@ -1,0 +1,54 @@
+# 26 October 2026: writes the STORYBOARD of a ZenRay Motion Design project in markdown, second by second, from the real
+# frames. Measured: the cues (first light, lens, flare, tile, flip, fade) and the light curves; hand-written: one sentence
+# per second (params/storyboards/<project>.json). Output: <motion project dir>/Storyboard.md and cues.json (read by the
+# SFX tracks and by ZenRay Edit), copied under out/motion/<project>/.
+# FR : écrit le storyboard d'un projet Motion Design en markdown, seconde par seconde, à partir des vraies images.
+# Usage: /usr/bin/python3 Scripts/Storyboard.py <project-id> [--resnap]
+import json, subprocess, sys, time
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT))
+import numpy as np
+from zrsfx import motion as M
+
+pid = sys.argv[1]; resnap = "--resnap" in sys.argv
+npz = ROOT / "out/motion" / f"{pid}.frames.npz"
+if resnap or not npz.exists():
+    subprocess.run([M.CFG["motionPython"], "-I", str(ROOT / "Scripts/MotionSnap.py"), pid, "0.016667", str(npz)], check=True)
+d = np.load(npz); c = M.curves(d["frames"], d["times"]); p = M.read_project(pid)
+cues = M.detect_cues(c, p.get("post")); scenes = M.scene_table(p); dur = scenes[-1]["end"]; fps = float(d["fps"])
+words = json.loads((ROOT / "params/storyboards" / f"{pid}.json").read_text())
+today = time.strftime("%d %B %Y").lstrip("0")
+L = [f"# Storyboard, {p.get('title', pid)} ({today})", "",
+     f"Projet Motion Design `{pid}`, format {p['format']}, {fps:g} images par seconde, durée {dur:.2f} s. Repères mesurés sur les images réelles par `Scripts/Storyboard.py` ({today}).", "",
+     f"## Scènes ({today})", "", "| Scène | Gabarit | Début | Fin | Rôle |", "|---|---|---|---|---|"]
+for s in scenes:
+    L.append(f"| {s['id']} | {s['template']} | {s['start']:.2f} s | {s['end']:.2f} s | {words.get('actNames', {}).get(s['id'], '')} |")
+L += ["", f"## Repères mesurés ({today})", "", "| Repère | Instant | Image | Ce qui se passe |", "|---|---|---|---|"]
+for k, v in sorted(((k, v) for k, v in cues.items() if v is not None), key=lambda kv: kv[1]):
+    L.append(f"| {k} | {v:.3f} s | {round(v * fps)} | {words.get('cueNotes', {}).get(k, '')} |")
+for k, v in cues.items():
+    if v is None:
+        L.append(f"| {k} | non détecté |  | aucune image ne satisfait le détecteur |")
+L += ["", f"## Seconde par seconde ({today})", ""]
+t = c["t"]
+for sec in range(int(np.ceil(dur))):
+    a, b = sec, min(sec + 1, dur); win = (t >= a) & (t < b)
+    if not win.any(): continue
+    lm, bl, br = c["lum"][win], c["blue"][win], c["bright"][win]
+    here = [f"{k} {v:.2f} s" for k, v in sorted(cues.items(), key=lambda kv: (kv[1] or 99)) if v is not None and a <= v < b]
+    L += [f"### {a} à {b:g} s ({today})", "", words["seconds"].get(str(sec), ""), "",
+          f"Mesure : luminance moyenne de {lm.min():.1f} à {lm.max():.1f}, excès de bleu de {bl.min():.1f} à {bl.max():.1f}, surface très claire de {br.min():.1f} à {br.max():.1f} %. Repères dans cette seconde : {', '.join(here) if here else 'aucun'}.", ""]
+L += [f"## Pistes sonores demandées ({today})", ""]
+for r in words.get("requests", []):
+    L.append(f"- **{r['id']}** : {r['words']} (cadence : {r.get('cue') or r.get('from')}). ({today})")
+L += ["", f"## Courbes de la lumière ({today})", "", "Luminance moyenne image par image (0 à 255), un point tous les 0,1 s :", "", "```"]
+for i in range(0, len(t), 6):
+    L.append(f"{t[i]:5.2f} s  lum {c['lum'][i]:6.1f}  bleu {c['blue'][i]:6.1f}  clair {c['bright'][i]:5.2f} %")
+L += ["```", ""]
+md = "\n".join(L)
+assert "—" not in md and "–" not in md
+out = M.project_dir(pid)
+(out / "Storyboard.md").write_text(md); (out / "cues.json").write_text(json.dumps({"project": pid, "date": today, "fps": fps, "duration": dur, "cues": cues, "scenes": scenes}, indent=1))
+dst = ROOT / "out/motion" / pid; dst.mkdir(parents=True, exist_ok=True)
+(dst / "Storyboard.md").write_text(md); (dst / "cues.json").write_text((out / "cues.json").read_text())
+print(out / "Storyboard.md"); print(json.dumps(cues))

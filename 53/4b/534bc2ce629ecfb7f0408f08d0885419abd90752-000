@@ -1,0 +1,47 @@
+{
+  "_doc": "26 October 2026: the words of the storyboard of ZenRay Sony puis PlayStation, rythme D (6 s). The numbers (cues, brightness) are measured by Scripts/Storyboard.py from the real frames; only the sentences below are written by hand from the frames, one per second. FR : les phrases du storyboard, une par seconde ; les nombres sont mesurés.",
+  "film": "Sony puis PlayStation, rythme D",
+  "actNames": {
+    "b01": "Acte 1, révélation façon Sony (ZENRAY sort du noir)",
+    "b02": "Acte 2, ouverture façon PlayStation (verre bleu, comète, tuile)"
+  },
+  "seconds": {
+    "0": "Noir complet. Vers 0,42 s une première lueur froide effleure le R, dont le bord apparaît en gris métallique. Le reste du mot reste dans le noir.",
+    "1": "La lumière est pleine sur le R vers 0,85 s. Elle glisse ensuite vers la droite (le A et le Y se dessinent en gris) puis, vers 1,52 s, vers la gauche : Z, E, N montent en gris sombre. Le mot entier est lisible à 1,6 s.",
+    "2": "La lentille : un orbe lumineux rond s'ouvre sur le R vers 1,67 s, avec des éclats minuscules, puis retombe. Fin de l'acte 1 à 2,17 s : coupe vers un fond bleu nuit, le mot ZENRAY passe au bleu verre et une ligne de lumière horizontale traverse tout le cadre vers 2,33 s.",
+    "3": "Le mot s'éclaire de plus en plus, la ligne de lumière s'épaissit, puis une comète blanche et bleue avale le mot : le flou de lumière culmine à 3,15 s et disparaît vers 3,47 s. Une plaque de verre à contour bleu entre en rotation vers 3,73 s.",
+    "4": "La plaque tourne et se redresse : à 3,88 s elle bascule en tuile blanche avec la marque ZenRay au centre, ZENRAY s'écrit dessous. Le cadre se stabilise vers 4,6 s. Une impulsion d'aberration chromatique (franges rouge et bleue) démarre à 4,42 s.",
+    "5": "La tuile blanche reste immobile avec ses franges de couleur jusqu'à 5,42 s, puis tout s'éteint par un fondu qui commence vers 5,28 s et atteint le noir à 5,95 s."
+  },
+  "cueNotes": {
+    "firstLight": "Première lueur sur le R.",
+    "lightFull": "Le R est pleinement éclairé.",
+    "wordSpread": "La lumière gagne les lettres voisines.",
+    "lens": "La lentille (orbe rond) apparaît sur le R.",
+    "blueOnset": "Début de l'acte 2 : le fond et le mot passent au bleu.",
+    "beam": "La ligne de lumière traverse tout le cadre.",
+    "flarePeak": "Le flou de lumière (la comète) est à son maximum.",
+    "flareGone": "La comète a disparu.",
+    "tileAppears": "La plaque de verre à contour bleu apparaît.",
+    "whiteFlip": "La plaque devient une tuile blanche (la marque ZenRay se révèle).",
+    "settle": "Le cadre est stable.",
+    "aberrationStart": "Début de l'impulsion d'aberration chromatique.",
+    "aberrationEnd": "Fin de l'impulsion d'aberration chromatique.",
+    "fadeStart": "Début du fondu final.",
+    "fadeEnd": "Noir complet."
+  },
+  "requests": [
+    {
+      "id": "sfx1",
+      "cue": "lens",
+      "from": "firstLight",
+      "words": "Le premier SFX est cadencé au niveau où la lentille apparaît sur le R."
+    },
+    {
+      "id": "sfx2",
+      "from": 3.0,
+      "to": "fadeEnd",
+      "words": "Le second SFX est à placer à partir de 3 secondes : un effet de progression très classe, façon PlayStation et Kojima, sur l'apparition du logo, comme si ça chargeait dans une autre dimension."
+    }
+  ]
+}

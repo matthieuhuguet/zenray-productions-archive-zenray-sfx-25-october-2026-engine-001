@@ -1,0 +1,19 @@
+# 26 October 2026: renders the SILENT video of a Motion Design project with the app's own pipeline (cook + HyperFrames), so
+# ZenRay SFX and ZenRay Edit can preview a film with its sound tracks. Run with the Motion venv.
+# FR : rend la vidéo muette d'un projet Motion Design avec le pipeline de l'app, pour l'aperçu synchronisé.
+# Usage: /Users/zenray/.venvs/zenray-motion/bin/python -I Scripts/MotionRender.py <project-id> <out.mp4> [--final]
+import shutil, sys, tempfile, time
+from pathlib import Path
+MOTION = "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRayMotionDesign/motion"  # -I ignores PYTHONPATH
+sys.path.insert(0, MOTION)
+import server
+pid, out = sys.argv[1], Path(sys.argv[2]).resolve(); final = "--final" in sys.argv
+ex = server.CFG["export"]; work = Path(tempfile.mkdtemp(prefix="zrsfx-render-"))
+try:
+    t0 = time.time(); page = server.cook(pid, work / "page"); out.parent.mkdir(parents=True, exist_ok=True)
+    r = server.hyperframes(page, "render", "-f", str(ex["fps"]), "-q", ex["quality"] if final else ex["draftQuality"], "-w", str(ex["workers"]), "-o", str(out), timeout=int(ex["timeoutS"]))
+    if r.returncode or not out.exists():
+        raise SystemExit(f"HyperFrames failed: {(r.stderr or r.stdout)[-600:]}")
+    print(out, f"{out.stat().st_size / 1e6:.1f} MB", f"{time.time() - t0:.0f} s")
+finally:
+    shutil.rmtree(work, ignore_errors=True)
