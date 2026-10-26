@@ -1,0 +1,97 @@
+# 26 October 2026: three CLEAN versions of sfx2 for "ZenRay, Sony puis PlayStation, rythme D" (after the rejected nine variations of a
+# stretched noise pad). Pure additive and FM tones, no noise at all: G1 glass chord and soft glass notes, G2 tender strings, G3 sparse
+# electric piano over a quiet pad. Slow swell to the aberration start (1.417 s), smooth room tail, closing into silence.
+# FR : trois versions propres de sfx2, tons purs sans bruit. Tous les nombres sont dans params/clean-sfx2.json.
+# Usage: /usr/bin/python3 Scripts/DesignRhythmD5.py   (writes out/proposals/<film>/sfx2-G1..G3.wav, sheet-v5.png, measures-v5.json, params/proposals/<film>.v5.json)
+#        /usr/bin/python3 Scripts/DesignRhythmD5.py --check [--red]   (cleanliness gate; --red adds noise and must fail)
+import json, re, subprocess, sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(ROOT / "Scripts"))
+import numpy as np, soundfile as sf, librosa
+from scipy.signal import butter, sosfiltfilt, fftconvolve
+import DesignRhythmD as D
+import DesignRhythmD2 as D2
+
+SR, FILM, OUT = 48000, D.SPEC["film"], ROOT / "out/proposals" / D.SPEC["film"]
+P = json.loads((ROOT / "params/clean-sfx2.json").read_text()); N = 3 * SR; T = np.arange(N) / SR
+db = lambda x: 10 ** (x / 20)
+
+def swell(peak, end, rise=1.8):
+    """Slow raised-sine rise to the crest, a release that falls evenly in dB (-50 dB at `end`), then the final fade to exact silence."""
+    g = np.zeros(N); up = T <= peak; g[up] = np.sin(0.5 * np.pi * T[up] / peak) ** rise
+    u = np.clip((T[~up] - peak) / (end - peak), 0, 1); g[~up] = 10 ** (-50 * u ** 1.4 / 20); return g      # release straight in dB: the ear hears it as even
+
+def voice(hz, partials, cents=0.0, saw=False, lp=None):
+    """One note as a sum of harmonics (all below Nyquist, none aliased). saw: 1/n stack softened by a smooth low-pass curve."""
+    y = np.zeros(N)
+    for k in range(1, 14 if saw else len(partials) + 1):
+        f = hz * k * 2 ** (cents / 1200)
+        if f >= 9000: break
+        a = (1.0 / k) / (1 + (f / lp) ** 4) if saw else db(partials[k - 1])
+        y += a * np.sin(2 * np.pi * f * T + 0.7 * k)
+    return y
+
+def room(y, sec, wet, seed=11):
+    n = int(sec * SR); t = np.arange(n) / SR; ir = np.random.default_rng(seed).standard_normal(n) * np.exp(-6.9 * t / sec)
+    ir = sosfiltfilt(butter(2, 6000, "low", fs=SR, output="sos"), ir); ir[:int(0.02 * SR)] *= np.linspace(0, 1, int(0.02 * SR)); ir /= np.sqrt((ir ** 2).sum())
+    return (1 - wet) * y + wet * fftconvolve(y, ir)[:len(y)]
+
+def glass(at, hz, rel):
+    """A glass-harmonica note: a soft 60 ms attack, long smooth decay, two quiet overtones."""
+    k = np.arange(N) / SR - at; env = np.where(k < 0, 0, np.minimum(np.clip(k, 0, None) / 0.06, 1) ** 2 * np.exp(-np.clip(k, 0, None) / 0.7))
+    return env * (np.sin(2 * np.pi * hz * T) + 0.12 * np.sin(2 * np.pi * 2 * hz * T) + 0.03 * np.sin(2 * np.pi * 3 * hz * T)) * db(rel)
+
+def key(at, hz, vel):
+    """A soft electric-piano note by FM: 1:1 body with a decaying index, a faint 14:1 tine, 20 ms soft attack."""
+    k = np.clip(T - at, 0, None); on = (T >= at).astype(float); idx = 1.4 * vel * np.exp(-k / 0.22); tine = 0.15 * vel * np.exp(-k / 0.05)
+    env = np.minimum(k / 0.02, 1) ** 2 * np.exp(-k / 1.0) * on
+    return env * vel * (np.sin(2 * np.pi * hz * T + idx * np.sin(2 * np.pi * hz * T)) + tine * np.sin(2 * np.pi * 14 * hz * T))
+
+def render(v):
+    g = swell(P["peakAt"], P["endAt"]); y = np.zeros(N)
+    for hz in v["pad"]:
+        y += voice(hz, v.get("partials", [0]), 0, v.get("saw", False), v.get("lowpassHz"))
+        if v.get("detuneCents"): y += voice(hz, v.get("partials", [0]), v["detuneCents"], v.get("saw", False), v.get("lowpassHz")) + voice(hz, v.get("partials", [0]), -v["detuneCents"], v.get("saw", False), v.get("lowpassHz"))
+    y = y / max(np.abs(y).max(), 1e-9) * g * db(v.get("padDb", 0))
+    if v.get("rootHz"): y += 0.5 * np.sin(2 * np.pi * v["rootHz"] * T) * g ** 1.5 * db(v["rootDb"]) * np.abs(y).max() * 2
+    ref = np.abs(y).max() or 1.0; extra = np.zeros(N)
+    for at, hz, rel in v.get("glass", []): extra += glass(at, hz, rel) * ref
+    for at, hz, vel in v.get("keys", []): extra += key(at, hz, vel) * 0.6
+    y = room(y + extra, v["verbSec"], v["verbWet"])
+    m = int(0.5 * SR); y[-m:] *= (0.5 * (1 + np.cos(np.pi * np.arange(m) / m))) ** 4; return y.astype(np.float32)
+
+def lufs(f):
+    r = subprocess.run(["ffmpeg", "-nostats", "-i", str(f), "-af", "ebur128=peak=true", "-f", "null", "-"], capture_output=True, text=True)
+    return float(re.findall(r"I:\s+(-?\d+\.\d+) LUFS", r.stderr)[-1])
+
+def clean(y):
+    """Cleanliness: tonal (low spectral flatness while alive), nothing above 9 kHz, no 20 ms level step above the limit (3 dB; 4.5 with piano notes), ends in silence."""
+    S = np.abs(librosa.stft(y, n_fft=4096, hop_length=1024)) ** 2 + 1e-14; alive = S.sum(0) > S.sum(0).max() * 1e-3
+    flat = float(np.mean(librosa.feature.spectral_flatness(S=np.sqrt(S))[0][alive])); hf = float(S[int(9000 / SR * 4096):].sum() / S.sum())
+    k = int(0.02 * SR); e = 20 * np.log10(np.sqrt((y[:len(y) // k * k].reshape(-1, k) ** 2).mean(1)) + 1e-9); live = e > e.max() - 28
+    step = float(np.abs(np.diff(e))[live[1:] & live[:-1]].max())
+    return {"flatness": round(flat, 5), "above9kHz": round(hf, 6), "step20msDb": round(step, 2), "endsSilent": bool(np.abs(y[-int(.05 * SR):]).max() < 1e-4)}
+
+LIMITS = {"flatness": 0.002, "above9kHz": 0.0005, "step20msDb": 3.0}
+def gate(c, step=None): return [k for k, lim in {**LIMITS, 'step20msDb': step or LIMITS['step20msDb']}.items() if c[k] > lim] + ([] if c["endsSilent"] else ["endsSilent"])
+
+def main():
+    made, rows, props = {}, {}, {}
+    for key_, v in P["variants"].items():
+        y = render(v); f = OUT / f"sfx2-{key_}.wav"; sf.write(f, y, SR, subtype="PCM_24"); y = y * db(P["targetLufs"] - lufs(f)); assert np.abs(y).max() < db(-3)
+        sf.write(f, y, SR, subtype="PCM_24"); made[("sfx2", key_)] = (v["name"], y, D.S2); c = clean(y)
+        rows[key_] = {"name": v["name"], "lufs": round(lufs(f), 2), "peakDb": round(float(20 * np.log10(np.abs(y).max())), 2), **c, "failsGate": gate(c, v.get("stepLimitDb"))}
+        props[key_] = {"name": v["name"], "hitAt": P["peakAt"], "note": "version propre, tons purs"}; print(key_, rows[key_])
+    (OUT / "measures-v5.json").write_text(json.dumps(rows, indent=1, ensure_ascii=False)); D2.sheet(made, "sheet-v5.png")
+    (ROOT / "params/proposals" / f"{FILM}.v5.json").write_text(json.dumps({"film": FILM, "date": "26 October 2026", "cues": D.CUES, "tracks": {"sfx2": {"label": "Progression vers une autre dimension", "start": D.S2, "main": "aberrationStart", "anchors": [{"cue": "aberrationStart", "role": "band"}], "proposals": props}}}, indent=1, ensure_ascii=False))
+
+def check(red):
+    bad = 0
+    for key_ in P["variants"]:
+        y, _ = sf.read(OUT / f"sfx2-{key_}.wav", dtype="float32")
+        if red: y = y + np.random.default_rng(1).standard_normal(len(y)).astype(np.float32) * 10 ** (-48 / 20) * np.sqrt((y ** 2).mean()) * 10 ** (20 / 20)
+        c = clean(y); fails = gate(c, P['variants'][key_].get('stepLimitDb')); bad += bool(fails); print(("FAIL " if fails else "ok   ") + key_, c, fails)
+    sys.exit(1 if bad else 0)
+
+if __name__ == "__main__":
+    check("--red" in sys.argv) if "--check" in sys.argv else main()

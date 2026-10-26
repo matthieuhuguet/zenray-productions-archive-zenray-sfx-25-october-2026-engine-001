@@ -1,0 +1,101 @@
+{
+  "_doc": "26 October 2026: three CLEAN versions of the progress sound (sfx2, from 3 s), after Matthieu rejected the nine stretched-noise variations (a stretched rain pad sounded like hell). No noise anywhere: pure harmonic tones, a slow swell that crests when the aberration starts (1.417 s), a smooth room tail, a close into silence. All numbers are here; Scripts/DesignRhythmD5.py only reads them. pad = [Hz, ...] chord notes; partials = relative dB of partial 1, 2, 3...; detuneCents = a second voice detuned for width; lowpassHz = softens the saw-like strings; rootHz = a soft low note; glass = [second, Hz, dB] soft glass-harmonica notes; keys = [second, Hz, velocity 0..1] soft electric-piano notes; verbSec/verbWet = the room. dB values are relative to the pad. FR : trois versions propres, sans aucun bruit ; tous les nombres sont ici. stepLimitDb = the allowed level step per 20 ms for variants with piano notes (a note onset is a step by nature).",
+  "targetLufs": -26.0,
+  "peakAt": 1.417,
+  "endAt": 2.95,
+  "variants": {
+    "G1": {
+      "name": "Verre doux",
+      "pad": [
+        146.83,
+        220.0,
+        329.63,
+        369.99,
+        440.0
+      ],
+      "partials": [
+        0,
+        -14,
+        -24
+      ],
+      "detuneCents": 0,
+      "padDb": 0,
+      "glass": [
+        [
+          1.417,
+          1480.0,
+          -8
+        ],
+        [
+          1.9,
+          1760.0,
+          -16
+        ]
+      ],
+      "verbSec": 2.2,
+      "verbWet": 0.38,
+      "stepLimitDb": 3.6
+    },
+    "G2": {
+      "name": "Cordes tendres",
+      "pad": [
+        146.83,
+        220.0,
+        293.66,
+        369.99,
+        440.0
+      ],
+      "saw": true,
+      "lowpassHz": 1400,
+      "detuneCents": 6,
+      "rootHz": 73.42,
+      "rootDb": -12,
+      "padDb": 0,
+      "verbSec": 2.4,
+      "verbWet": 0.35
+    },
+    "G3": {
+      "name": "Piano électrique et nappe",
+      "pad": [
+        146.83,
+        220.0
+      ],
+      "partials": [
+        0,
+        -16,
+        -28
+      ],
+      "padDb": -12,
+      "keys": [
+        [
+          0.15,
+          587.33,
+          0.55
+        ],
+        [
+          0.88,
+          440.0,
+          0.5
+        ],
+        [
+          1.417,
+          739.99,
+          0.8
+        ],
+        [
+          1.95,
+          880.0,
+          0.45
+        ],
+        [
+          2.35,
+          1174.66,
+          0.3
+        ]
+      ],
+      "verbSec": 2.4,
+      "verbWet": 0.45,
+      "stepLimitDb": 4.5
+    }
+  }
+}

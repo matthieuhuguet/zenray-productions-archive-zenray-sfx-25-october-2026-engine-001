@@ -1,0 +1,32 @@
+{
+ "G1": {
+  "name": "Verre doux",
+  "lufs": -26.0,
+  "peakDb": -12.6,
+  "flatness": 0.0,
+  "above9kHz": 0.0,
+  "step20msDb": 3.41,
+  "endsSilent": true,
+  "failsGate": []
+ },
+ "G2": {
+  "name": "Cordes tendres",
+  "lufs": -26.0,
+  "peakDb": -12.42,
+  "flatness": 0.0,
+  "above9kHz": 0.0,
+  "step20msDb": 2.58,
+  "endsSilent": true,
+  "failsGate": []
+ },
+ "G3": {
+  "name": "Piano électrique et nappe",
+  "lufs": -26.0,
+  "peakDb": -13.53,
+  "flatness": 0.0,
+  "above9kHz": 7.3e-05,
+  "step20msDb": 4.01,
+  "endsSilent": true,
+  "failsGate": []
+ }
+}
