@@ -1,0 +1,38 @@
+{
+ "J1": {
+  "name": "Tel quel, calé sur l'apparition",
+  "lufs": -25.0,
+  "peakDb": -9.17,
+  "crackle": 1.43,
+  "referenceCrackle": 1.49,
+  "hfLevelDb": -42.7,
+  "referenceHfDb": -33.0,
+  "ok": true,
+  "crestAt": 1.4,
+  "wanted": 1.417
+ },
+ "J2": {
+  "name": "Plus profond (bande, -2 demi-tons)",
+  "lufs": -25.0,
+  "peakDb": -8.67,
+  "crackle": 1.54,
+  "referenceCrackle": 1.49,
+  "hfLevelDb": -43.4,
+  "referenceHfDb": -33.0,
+  "ok": true,
+  "crestAt": 1.4,
+  "wanted": 1.417
+ },
+ "J3": {
+  "name": "Plus ample (queue de salle)",
+  "lufs": -25.0,
+  "peakDb": -8.7,
+  "crackle": 1.51,
+  "referenceCrackle": 1.49,
+  "hfLevelDb": -44.6,
+  "referenceHfDb": -33.0,
+  "ok": true,
+  "crestAt": 1.45,
+  "wanted": 1.417
+ }
+}

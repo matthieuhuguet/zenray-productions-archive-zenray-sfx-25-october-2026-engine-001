@@ -1,0 +1,24 @@
+# 26 October 2026: the crackle index. Matthieu heard the reproduction of the Sony apparition "grésiller" while its score said 99.23 and
+# the reference was clean. The index measures it: in the 5 to 12 kHz band, the energy of 10 ms frames in dB, minus its own slow
+# trend (200 ms); the index is the standard deviation of what is left (how jumpy the high band is from one 10 ms to the next).
+# A clean sound has the index of the reference; more means crackle. FR : mesure du grésillement, écart-type des sauts du haut du spectre.
+# Usage: /usr/bin/python3 Scripts/CrackleIndex.py file.wav [file.wav ...]
+import sys
+import numpy as np, soundfile as sf, librosa
+from scipy.ndimage import uniform_filter1d
+
+def crackle(y, sr=48000):
+    y = y if y.ndim == 1 else y.mean(1); S = np.abs(librosa.stft(np.asarray(y, np.float32), n_fft=1024, hop_length=480)) ** 2
+    f = librosa.fft_frequencies(sr=sr, n_fft=1024); e = 10 * np.log10(S[(f >= 5000) & (f < 12000)].sum(0) + 1e-14)
+    alive = e > e.max() - 45; r = (e - uniform_filter1d(e, 21))[alive]
+    return float(np.std(r))
+
+def hf_level(y, sr=48000):
+    """Mean level in dB of the 6 to 12 kHz band over the frames where the sound is alive (a hiss raises it, a clean sound keeps the reference's)."""
+    y = y if y.ndim == 1 else y.mean(1); S = np.abs(librosa.stft(np.asarray(y, np.float32), n_fft=1024, hop_length=480)) ** 2
+    f = librosa.fft_frequencies(sr=sr, n_fft=1024); e = 10 * np.log10(S[(f >= 6000) & (f < 12000)].mean(0) + 1e-14); tot = 10 * np.log10(S.sum(0) + 1e-14)
+    return float(e[tot > tot.max() - 45].mean())
+
+if __name__ == "__main__":
+    for p in sys.argv[1:]:
+        y, sr = sf.read(p); print(f"{crackle(y, sr):6.2f}  {p}")

@@ -11,7 +11,7 @@ import DesignRhythmD2 as D2
 from zrsfx import compose as C
 
 SR, FILM, OUT = 48000, D.SPEC["film"], ROOT / "out/proposals" / D.SPEC["film"]
-P = json.loads((ROOT / "params/sony-variations.json").read_text()); NAME = sys.argv[1] if len(sys.argv) > 1 else "Sony-Apparition-10-17s"
+P = json.loads((ROOT / "params/sony-variations.json").read_text()); NAME = next((a for a in sys.argv[1:] if not a.startswith("--") and not a.endswith(".py")), "Sony-Apparition-10-17s")
 R = json.loads((ROOT / "out/repro-sony-01" / f"{NAME}.recipe.json").read_text()); db = lambda x: 10 ** (x / 20)
 
 def crest(y):

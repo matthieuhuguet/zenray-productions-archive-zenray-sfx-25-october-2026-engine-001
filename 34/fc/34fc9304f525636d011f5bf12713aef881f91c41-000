@@ -1,0 +1,62 @@
+# 26 October 2026: three CLEAN variations of the reference Sony apparition for sfx2 (see params/sony-clean.json for the why).
+# Usage: /usr/bin/python3 Scripts/DesignRhythmD7.py            (writes out/proposals/<film>/sfx2-J1..J3.wav, sheet-v7.png, measures-v7.json)
+#        /usr/bin/python3 Scripts/DesignRhythmD7.py --check [--red]   (crackle gate; --red adds noise to the files and must fail)
+# FR : trois variations propres de la référence, rien d'ajouté ; porte : l'indice de grésillement reste celui de la référence.
+import json, re, subprocess, sys
+from fractions import Fraction
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(ROOT / "Scripts"))
+import numpy as np, soundfile as sf
+from scipy.signal import resample_poly, fftconvolve, butter, sosfiltfilt
+import DesignRhythmD as D
+import DesignRhythmD2 as D2
+import DesignRhythmD6 as D6
+from CrackleIndex import crackle, hf_level
+
+SR, FILM, OUT = 48000, D.SPEC["film"], ROOT / "out/proposals" / D.SPEC["film"]
+P = json.loads((ROOT / "params/sony-clean.json").read_text()); db = lambda x: 10 ** (x / 20)
+REF, _ = sf.read(ROOT / P["reference"], dtype="float32"); REF_CRACKLE, REF_HF = crackle(REF), hf_level(REF)
+D6.P = {**D6.P, "fadeIn": P["fadeIn"], "fadeOut": P["fadeOut"]}
+
+def room(y, sec, wet, seed=11):
+    n = int(sec * SR); t = np.arange(n) / SR; ir = np.random.default_rng(seed).standard_normal(n) * np.exp(-6.9 * t / sec)
+    ir = sosfiltfilt(butter(2, 5000, "low", fs=SR, output="sos"), ir); ir[:int(0.02 * SR)] *= np.linspace(0, 1, int(0.02 * SR)); ir /= np.sqrt((ir ** 2).sum())
+    return (1 - wet) * y + wet * fftconvolve(y, ir)[:len(y)]
+
+def make(v):
+    y = REF.astype(np.float64)
+    if v.get("tapeSt"):
+        r = Fraction(2 ** (-v["tapeSt"] / 12)).limit_denominator(1000); y = resample_poly(y, r.numerator, r.denominator)
+    if v.get("verbSec"): y = room(np.pad(y, (0, int(v["verbSec"] * 0.6 * SR))), v["verbSec"], v["verbWet"])
+    return D6.window(y.astype(np.float32), P["crestAt"])
+
+def lufs(f):
+    r = subprocess.run(["ffmpeg", "-nostats", "-i", str(f), "-af", "ebur128=peak=true", "-f", "null", "-"], capture_output=True, text=True)
+    return float(re.findall(r"I:\s+(-?\d+\.\d+) LUFS", r.stderr)[-1])
+
+def main():
+    made, rows, props = {}, {}, {}
+    for key, v in P["variants"].items():
+        w = make(v); f = OUT / f"sfx2-{key}.wav"; sf.write(f, w, SR, subtype="PCM_24"); w = w * db(P["targetLufs"] - lufs(f))
+        if np.abs(w).max() > db(-3): w *= db(-3) / np.abs(w).max()
+        sf.write(f, w, SR, subtype="PCM_24"); made[("sfx2", key)] = (v["name"], w, D.S2); c = crackle(w)
+        rows[key] = {"name": v["name"], "lufs": round(lufs(f), 2), "peakDb": round(float(20 * np.log10(np.abs(w).max())), 2), "crackle": round(c, 2), "referenceCrackle": round(REF_CRACKLE, 2),
+                     "hfLevelDb": round(hf_level(w), 1), "referenceHfDb": round(REF_HF, 1), "ok": c <= REF_CRACKLE * P["maxCrackleRatio"] and hf_level(w) <= REF_HF + P["maxHfExcessDb"], "crestAt": round(D6.crest(w), 2), "wanted": P["crestAt"]}
+        props[key] = {"name": v["name"], "hitAt": rows[key]["crestAt"], "note": "variation propre de la référence Sony"}; print(key, rows[key])
+    (OUT / "measures-v7.json").write_text(json.dumps(rows, indent=1, ensure_ascii=False)); D2.sheet(made, "sheet-v7.png")
+    (ROOT / "params/proposals" / f"{FILM}.v7.json").write_text(json.dumps({"film": FILM, "date": "26 October 2026", "cues": D.CUES, "tracks": {"sfx2": {"label": "Progression vers une autre dimension", "start": D.S2, "main": "aberrationStart", "anchors": [{"cue": "aberrationStart", "role": "band"}], "proposals": props}}}, indent=1, ensure_ascii=False))
+
+def check(red):
+    """Gate: crackle index within maxCrackleRatio of the reference AND the 6-12 kHz level within maxHfExcessDb of it. --red=steady adds a hiss, --red=bursty adds hiss gated in random 10 ms steps (the defect of the recipe): both must fail."""
+    mode = next((a.split("=")[1] if "=" in a else "steady" for a in sys.argv if a.startswith("--red")), None); bad = 0
+    for key in P["variants"]:
+        y, _ = sf.read(OUT / f"sfx2-{key}.wav", dtype="float32"); rng = np.random.default_rng(2)
+        if mode == "steady": y = y + rng.standard_normal(len(y)).astype(np.float32) * 10 ** (-52 / 20)
+        if mode == "bursty":
+            g = 10 ** (rng.normal(0, 8, len(y) // 480 + 1) / 20).repeat(480)[:len(y)]; y = y + rng.standard_normal(len(y)).astype(np.float32) * g.astype(np.float32) * 10 ** (-48 / 20)
+        c, h = crackle(y), hf_level(y); ok = c <= REF_CRACKLE * P["maxCrackleRatio"] and h <= REF_HF + P["maxHfExcessDb"]; bad += not ok
+        print(("ok   " if ok else "FAIL ") + f"{key} crackle {c:.2f} (limit {REF_CRACKLE * P['maxCrackleRatio']:.2f}), 6-12 kHz {h:.1f} dB (limit {REF_HF + P['maxHfExcessDb']:.1f})")
+    sys.exit(1 if bad else 0)
+
+if __name__ == "__main__":
+    check(None) if "--check" in sys.argv else main()

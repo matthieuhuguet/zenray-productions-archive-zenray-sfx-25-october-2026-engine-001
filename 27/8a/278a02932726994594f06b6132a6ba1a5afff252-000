@@ -1,0 +1,24 @@
+{
+  "_doc": "26 October 2026: three CLEAN variations of the reference Sony apparition (PlayStation Studios opening animation, seconds 10 to 17, already faded 1 s in and 1 s out in refs-sony). Only clean operations on the reference itself: a 3 s window whose loudest moment lands on the aberration start, a 1 s fade in and a 1 s fade out, optionally a tape-style transposition (speed and pitch together, no stretching artefact) and a smooth room tail. No noise is added, no recipe is rendered. The gate: the crackle index (Scripts/CrackleIndex.py) of each result must stay within maxCrackleRatio of the reference's. tapeSt = semitones of tape transposition (negative = lower and slower); verbSec/verbWet = room tail; shelfDb = gain of everything above 2 kHz. FR : trois variations propres de la référence, rien d'ajouté. maxHfExcessDb = how far the 6 to 12 kHz level may rise above the reference's.",
+  "reference": "refs-sony/Sony-Apparition-10-17s.wav",
+  "targetLufs": -25.0,
+  "crestAt": 1.417,
+  "fadeIn": 1.0,
+  "fadeOut": 1.0,
+  "maxCrackleRatio": 1.3,
+  "variants": {
+    "J1": {
+      "name": "Tel quel, calé sur l'apparition"
+    },
+    "J2": {
+      "name": "Plus profond (bande, -2 demi-tons)",
+      "tapeSt": -2
+    },
+    "J3": {
+      "name": "Plus ample (queue de salle)",
+      "verbSec": 2.4,
+      "verbWet": 0.25
+    }
+  },
+  "maxHfExcessDb": 2.0
+}
