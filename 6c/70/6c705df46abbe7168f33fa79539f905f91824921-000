@@ -38,6 +38,15 @@
     },
     "B3": {
      "name": "B montée plus raide"
+    },
+    "B1s": {
+     "name": "B plus d'air, fin douce"
+    },
+    "B2s": {
+     "name": "B plus sombre, fin douce"
+    },
+    "B3s": {
+     "name": "B montée raide, fin douce"
     }
    }
   },

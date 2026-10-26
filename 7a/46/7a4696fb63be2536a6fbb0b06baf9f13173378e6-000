@@ -1,0 +1,46 @@
+# 26 October 2026: round 3 of sfx2 (the progress sound from 3 s), after Matthieu: "use simply a Death Stranding sound, without
+# modifying it". So each proposal is ONE original sound placed in silence on the 3 s track, sample for sample (no gain, pitch, time,
+# effect, normalisation, resampling): only its start moves. The placement is the whole design: which sound, and which film instant
+# its accent meets. The files are local listening material of Matthieu's own references; they are never published.
+# FR : tour 3 de sfx2 : un son Death Stranding tel quel, seul son départ bouge ; contrôle d'identité à l'échantillon près.
+# Usage: /usr/bin/python3 Scripts/DesignRhythmD3.py  (writes out/proposals/<film>/sfx2-E1..E3.wav, params/proposals/<film>.v3.json)
+import json, sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(ROOT / "Scripts"))
+import numpy as np, soundfile as sf
+import DesignRhythmD as D
+
+SR, FILM, S2 = 48000, D.SPEC["film"], D.S2
+OUT = ROOT / "out/proposals" / FILM
+frames = lambda m, ms=20: np.sqrt((m[:len(m) // int(ms * SR / 1000) * int(ms * SR / 1000)].reshape(-1, int(ms * SR / 1000)) ** 2).mean(1))
+hit = lambda m: (int(np.argmax(frames(m))) + 0.5) * 0.02
+
+# (key, source, what it is placed on, the film instant (seconds from the track start) its accent meets or None = starts with the track, note)
+PLAN = [("E1", "15-TimeFall-Shelter", None, None, "L'abri du Timefall, tel quel, dès 3 s : il monte puis tient sous l'apparition du logo (son sommet tombe vers la tuile)"),
+        ("E2", "3-Cufflinks-Open", "whiteFlip", D.q("whiteFlip"), "Les boutons de manchette, tel quel : le déclic tombe quand la plaque du logo arrive, la queue s'éteint sous l'aberration"),
+        ("E3", "10-Mail-Open", "aberrationStart", D.q("aberrationStart"), "L'ouverture du courrier, telle quelle : l'ouverture tombe quand la dimension se déchire")]
+
+def place(src, instant):
+    y, sr = sf.read(ROOT / "refs" / f"{src}.wav", dtype="float32"); assert sr == SR and y.ndim == 1, f"{src}: expected mono {SR} Hz"
+    a = 0 if instant is None else int(round((instant - hit(y)) * SR)); assert a >= 0 and a + len(y) <= 3 * SR, f"{src}: leaves the 3 s track"
+    out = np.zeros(3 * SR, np.float32); out[a:a + len(y)] = y; return out, y, a
+
+def identical(out, y, a):
+    return bool(np.array_equal(out[a:a + len(y)], y)) and not out[:a].any() and not out[a + len(y):].any()
+
+def main():
+    rows, props = {}, {}
+    for key, src, cue, instant, note in PLAN:
+        out, y, a = place(src, instant); assert identical(out, y, a), f"{key}: not identical"
+        bad = out.copy(); bad[a + 1000] += 1e-3; assert not identical(bad, y, a), "the identity test never goes red"   # red test, one sample moved
+        f = OUT / f"sfx2-{key}.wav"; sf.write(f, out, SR, subtype="FLOAT")
+        back, _ = sf.read(f, dtype="float32"); assert np.array_equal(back, out), f"{key}: the file differs from what was placed"
+        rows[key] = {"source": src, "startsAt": round(a / SR, 4), "hitAt": round(hit(out), 3), "meets": cue or "début de la piste", "peakDb": round(float(20 * np.log10(np.abs(out).max())), 2), "identicalToSource": True}
+        props[key] = {"name": f"{src}, tel quel", "hitAt": rows[key]["hitAt"], "note": note}; print(key, rows[key])
+    (OUT / "measures-v3.json").write_text(json.dumps(rows, indent=1, ensure_ascii=False))
+    spec = {"film": FILM, "date": "26 October 2026", "cues": D.CUES, "tracks": {"sfx2": {"label": "Progression vers une autre dimension", "start": S2, "main": "aberrationStart",
+            "anchors": [{"cue": "aberrationStart", "role": "band"}], "proposals": props}}}
+    (ROOT / "params/proposals" / f"{FILM}.v3.json").write_text(json.dumps(spec, indent=1, ensure_ascii=False))
+
+if __name__ == "__main__":
+    main()

@@ -29,6 +29,36 @@
   "wanted": 1.317,
   "jumpDb": 13.3
  },
+ "sfx1-B1s": {
+  "name": "B plus d'air, fin douce",
+  "start": 0.35,
+  "seconds": 2.45,
+  "peakDb": -6.1,
+  "lufs": -24.4,
+  "hitAt": 1.35,
+  "wanted": 1.317,
+  "jumpDb": 8.4
+ },
+ "sfx1-B2s": {
+  "name": "B plus sombre, fin douce",
+  "start": 0.35,
+  "seconds": 2.45,
+  "peakDb": -6.7,
+  "lufs": -24.4,
+  "hitAt": 1.35,
+  "wanted": 1.317,
+  "jumpDb": 9.0
+ },
+ "sfx1-B3s": {
+  "name": "B montée raide, fin douce",
+  "start": 0.35,
+  "seconds": 2.45,
+  "peakDb": -8.3,
+  "lufs": -24.4,
+  "hitAt": 1.39,
+  "wanted": 1.317,
+  "jumpDb": 5.4
+ },
  "sfx2-D1": {
   "name": "Chargement en marches (Death Stranding)",
   "start": 3.0,

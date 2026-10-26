@@ -27,11 +27,11 @@ def ending():
     e += D.bell(LENS, 1568, -30, 1000)
     return e
 
-def intro(drones=((55.0, 0, -18, 1250), (82.4, -4, -24, 1000), (110.0, -6, -26, 900)), strings=(1.0, 1.0035), air=-38, glide=0.0, shape=None):
+def intro(tail=900, drones=((55.0, 0, -18, 1250), (82.4, -4, -24, 1000), (110.0, -6, -26, 900)), strings=(1.0, 1.0035), air=-38, glide=0.0, shape=None):
     """B's first second, as written in round 1, with the knobs the variations turn. Defaults = round 1 exactly."""
     e = []
     for f, rel, lvl, att in drones:
-        pts = shape(att) if shape else [[0, -60], [att, 0], [att + 160, -6], [att + 900, -60]]
+        pts = shape(att) if shape else [[0, -60], [att, 0], [att + 160, -6], [att + tail, -60]]
         e.append(ev(o("firstLight"), pts, tone(f, [(1, 0), (2, -7), (3, -12), (4, -16)], lvl + rel, glide=glide)))
     for det in strings:
         e.append(ev(o("lightFull") - 0.1, [[0, -60], [950, -6], [1050, -8], [1700, -60]], tone(220.0 * det, SAW, -34, glide=glide)))
@@ -51,6 +51,24 @@ def sfx1_B2():  # B darker and wider: a deeper floor, three detuned strings, a l
 def sfx1_B3():  # B steeper: slow start, quick finish, strings climb two semitones into the lens
     steep = lambda att: [[0, -60], [att * 0.55, -22], [att, 0], [att + 160, -6], [att + 900, -60]]
     return intro(shape=steep, glide=2.0, air=-36) + ending()
+
+# Round 3 (Matthieu: stop the big slap, close it softly): the swell rises slowly into a very small, dull, low impact, then the sound is
+# closed discreetly. Written from sound design practice for a Remedy "Control" feel (brutalist, sub-bass, a distant glassy resonance,
+# no bright bell, no click). FR : tour 3 : fin douce, tout petit impact sourd, fermeture discrète.
+def soft_ending():
+    e = [ev(LENS, [[0, -60], [12, 0], [130, -12], [420, -45], [620, -60]], None, noise(D.THUD, -22)),                                   # dull body, low-passed
+         ev(LENS, [[0, -60], [16, 0], [260, -16], [760, -60]], tone(52, [(1, 0), (2, -10)], -19, glide=-4)),                            # a small low push
+         ev(LENS + 0.004, [[0, -60], [8, 0], [150, -24], [330, -60]], tone(118, [(1, 0), (2, -9), (3, -16)], -31)),                      # knock of a concrete wall
+         ev(LENS + 0.03, [[0, -60], [30, -16], [900, -44], [1050, -60]], None, noise(D.AIR_MID, -44, sweep=-0.5)),                      # the air closes behind it
+         ev(LENS + 0.05, [[0, -60], [60, -10], [1000, -40], [1100, -60]], tone(1568, [(1, 0), (2, -14)], -47)),                         # a faint distant glass resonance
+         ev(LENS + 0.05, [[0, -60], [80, -12], [1000, -42], [1100, -60]], tone(1569.6, [(1, 0)], -49))]                                 # its beating twin
+    return e
+
+def sfx1_B1s(): return intro(tail=700) + soft_ending() + [ev(o("firstLight"), [[0, -60], [900, -14], [1250, -60]], None, noise(HISS, -40, sweep=1.4)),
+                                                          ev(o("lightFull"), [[0, -60], [500, -10], [820, -24], [1050, -60]], tone(2349.0, GLASS, -42))]
+def sfx1_B2s(): return intro(tail=700, drones=((55.0, 0, -18, 1280), (82.4, -4, -24, 1060), (110.0, -6, -26, 960), (41.2, -2, -22, 1300)), strings=(0.9965, 1.0, 1.0035), air=-41) + soft_ending()
+def sfx1_B3s(): return intro(tail=700, shape=lambda att: [[0, -60], [att * 0.55, -22], [att, 0], [att + 160, -6], [att + 700, -60]], glide=2.0, air=-36) + soft_ending()
+SFX1S = {"B1s": ("B plus d'air, fin douce", sfx1_B1s), "B2s": ("B plus sombre, fin douce", sfx1_B2s), "B3s": ("B montée raide, fin douce", sfx1_B3s)}
 
 SFX1 = {"B1": ("B plus d'air", sfx1_B1), "B2": ("B plus sombre et large", sfx1_B2), "B3": ("B montée plus raide", sfx1_B3)}
 
@@ -124,17 +142,17 @@ def jump(y, t):
     r = lambda a, b: 20 * np.log10(np.sqrt((y[int(a * SR):int(b * SR)] ** 2).mean()) + 1e-9)
     return round(float(r(t, t + 0.12) - r(t - 0.35, t - 0.05)), 1)
 
-def finish(y, seconds):
+def finish(y, seconds, fade=0.06):
     y = np.asarray(y, np.float32)[:int(seconds * SR)]; y = np.pad(y, (0, int(seconds * SR) - len(y)))
-    y[-int(0.06 * SR):] *= np.linspace(1, 0, int(0.06 * SR)); return y / max(np.abs(y).max(), 1e-9) * 10 ** (PEAK_DB / 20)
+    y[-int(fade * SR):] *= np.linspace(1, 0, int(fade * SR)) ** 1.5; return y / max(np.abs(y).max(), 1e-9) * 10 ** (PEAK_DB / 20)
 
 def main():
     cues = {"sfx1": ("lens", LENS), "sfx2": ("aberrationStart", CLIMAX)}; rows, made = {}, {}
     brief_of = {}
-    for k, (name, fn) in SFX1.items():
+    for k, (name, fn) in {**SFX1, **SFX1S}.items():
         ev_ = fn(); br = {"name": f"sfx1-{k}", "seconds": 2.45, "seed": 0, "events": ev_, "space": 0.55}
         assert B.to_text(B.from_text(B.to_text(br))) == B.to_text(br), f"sfx1-{k} text round trip"
-        made[("sfx1", k)] = (name, finish(C.render_any(br, SR), 2.45), D.S1); brief_of[("sfx1", k)] = br
+        made[("sfx1", k)] = (name, finish(C.render_any(br, SR), 2.45, fade=0.6 if k.endswith('s') else 0.06), D.S1); brief_of[("sfx1", k)] = br
     for k, (name, fn) in SFX2.items():
         made[("sfx2", k)] = (name, finish(fn(), 3.0), D.S2)
     for (tid, k), (name, y, start) in made.items():
@@ -151,7 +169,7 @@ def main():
     (OUT / "measures-v2.json").write_text(json.dumps(rows, indent=1, ensure_ascii=False))
     # the spec the index reads (kind sfx-proposal, family film/track, switchable with A B C of round 1)
     spec = {"film": FILM, "date": "26 October 2026", "cues": CUES, "tracks": {
-        "sfx1": {"label": "La lentille sur le R", "start": D.S1, "main": "lens", "anchors": [{"cue": "lens", "role": "onset"}], "proposals": {k: {"name": v[0]} for k, v in SFX1.items()}},
+        "sfx1": {"label": "La lentille sur le R", "start": D.S1, "main": "lens", "anchors": [{"cue": "lens", "role": "onset"}], "proposals": {k: {"name": v[0]} for k, v in {**SFX1, **SFX1S}.items()}},
         "sfx2": {"label": "Progression vers une autre dimension", "start": D.S2, "main": "aberrationStart", "anchors": [{"cue": "aberrationStart", "role": "band"}], "proposals": {k: {"name": v[0]} for k, v in SFX2.items()}}}}
     (ROOT / "params/proposals" / f"{FILM}.v2.json").write_text(json.dumps(spec, indent=1, ensure_ascii=False))
     (ROOT / "params/proposals" / f"{FILM}.v2.briefs.json.txt").write_text("\n\n".join(f"## sfx1-{k}\n{B.to_text(b)}" for (t, k), b in brief_of.items()))

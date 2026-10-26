@@ -1,0 +1,51 @@
+{
+ "film": "zenray-sony-playstation-d-ppm",
+ "date": "26 October 2026",
+ "cues": {
+  "firstLight": 0.417,
+  "lightFull": 0.85,
+  "lens": 1.667,
+  "wordSpread": 1.517,
+  "blueOnset": 2.183,
+  "beam": 2.333,
+  "flarePeak": 3.15,
+  "flareGone": 3.467,
+  "tileAppears": 3.733,
+  "whiteFlip": 3.883,
+  "settle": 4.617,
+  "fadeStart": 5.283,
+  "fadeEnd": 5.95,
+  "aberrationStart": 4.417,
+  "aberrationEnd": 5.417
+ },
+ "tracks": {
+  "sfx2": {
+   "label": "Progression vers une autre dimension",
+   "start": 3.0,
+   "main": "aberrationStart",
+   "anchors": [
+    {
+     "cue": "aberrationStart",
+     "role": "band"
+    }
+   ],
+   "proposals": {
+    "E1": {
+     "name": "15-TimeFall-Shelter, tel quel",
+     "hitAt": 0.65,
+     "note": "L'abri du Timefall, tel quel, dès 3 s : il monte puis tient sous l'apparition du logo (son sommet tombe vers la tuile)"
+    },
+    "E2": {
+     "name": "3-Cufflinks-Open, tel quel",
+     "hitAt": 0.89,
+     "note": "Les boutons de manchette, tel quel : le déclic tombe quand la plaque du logo arrive, la queue s'éteint sous l'aberration"
+    },
+    "E3": {
+     "name": "10-Mail-Open, tel quel",
+     "hitAt": 1.43,
+     "note": "L'ouverture du courrier, telle quelle : l'ouverture tombe quand la dimension se déchire"
+    }
+   }
+  }
+ }
+}

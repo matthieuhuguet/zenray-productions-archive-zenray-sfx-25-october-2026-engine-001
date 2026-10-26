@@ -1,0 +1,26 @@
+{
+ "E1": {
+  "source": "15-TimeFall-Shelter",
+  "startsAt": 0.0,
+  "hitAt": 0.65,
+  "meets": "début de la piste",
+  "peakDb": -7.32,
+  "identicalToSource": true
+ },
+ "E2": {
+  "source": "3-Cufflinks-Open",
+  "startsAt": 0.813,
+  "hitAt": 0.89,
+  "meets": "whiteFlip",
+  "peakDb": -9.99,
+  "identicalToSource": true
+ },
+ "E3": {
+  "source": "10-Mail-Open",
+  "startsAt": 1.327,
+  "hitAt": 1.43,
+  "meets": "aberrationStart",
+  "peakDb": -12.1,
+  "identicalToSource": true
+ }
+}
