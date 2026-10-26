@@ -1,0 +1,28 @@
+# 26 October 2026: checks the soft sounds. (1) the swell gain curve of every variant is continuous (no step: the bug of the first
+# render, a parenthesis that made the gain jump 1.0 to 1.23 at the crest and click); (2) the level envelope (100 ms window, 10 ms hop)
+# never moves faster than --max dB per hop (3.0: the level of a calm pad; the natural flutter of the Timefall source is about 2 dB, a click is far above); (3) every file ends in silence. --red swaps in the broken curve and must FAIL.
+# FR : contrôle de douceur : courbe continue, enveloppe douce, fin silencieuse ; --red remet la courbe cassée et doit échouer.
+import argparse, glob, json, sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(ROOT / "Scripts"))
+import numpy as np, soundfile as sf
+import DesignRhythmD4 as D4
+ap = argparse.ArgumentParser(); ap.add_argument("--max", type=float, default=3.0); ap.add_argument("--red", action="store_true"); a = ap.parse_args()
+
+def broken(n, peak_at, out_from, rise=1.6):   # the first version: 0.5 * (1+cos)**1.3, which starts at 1.23 instead of 1
+    t = np.arange(n) / D4.SR; g = np.zeros(n); up = t <= peak_at; g[up] = np.sin(0.5 * np.pi * t[up] / peak_at) ** rise
+    dn = ~up; u = np.clip((t[dn] - peak_at) / (2.95 - peak_at), 0, 1); g[dn] = 0.5 * (1 + np.cos(np.pi * u)) ** 1.3; return g
+
+swell = broken if a.red else D4.swell
+bad = []
+for key, v in D4.P["variants"].items():
+    p = {**D4.P["defaults"], **v}; g = swell(3 * D4.SR, p["peakAt"], p["fadeOutFrom"], p["rise"]); step = float(np.abs(np.diff(g)).max())
+    if step > 2e-4: bad.append(f"{key}: swell steps by {step:.4f} in one sample")
+for f in sorted(glob.glob(str(ROOT / "out/proposals" / D4.FILM / "sfx2-F*.wav"))):
+    y, sr = sf.read(f); k, h = int(0.1 * sr), int(0.01 * sr)
+    e = np.array([20 * np.log10(np.sqrt((y[i:i + k] ** 2).mean()) + 1e-9) for i in range(0, len(y) - k, h)]); live = e > e.max() - 25
+    worst = float(np.abs(np.diff(e))[live[1:] & live[:-1]].max())
+    if worst > a.max: bad.append(f"{Path(f).name}: envelope moves {worst:.2f} dB per 10 ms")
+    if np.abs(y[-int(0.05 * sr):]).max() > 1e-4: bad.append(f"{Path(f).name}: does not end in silence")
+print(("RED run: " if a.red else "GREEN run: ") + f"{len(bad)} failures", *bad[:6], sep="\n  ")
+sys.exit(1 if bad else 0)

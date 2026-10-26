@@ -1,0 +1,114 @@
+{
+  "_doc": "26 October 2026: nine soft variations of sfx2-E1 (the Death Stranding Timefall shelter), for 'ZenRay, Sony puis PlayStation, rythme D'. Every number of the nine is here; Scripts/DesignRhythmD4.py only reads it. Keys: stretch = length factor of the source pad; pitchSt = transposition in semitones; lowpassHz = 4th order low-pass (softness); peakAt = second of the track where the swell crests (1.417 = the aberration starts); fadeOutFrom = second where the closing fade begins (ends at 2.95); verbWet and verbSec = room tail; subHz/subDb = a soft low swell (dB under the pad); subRise = ratio of the sub pitch at the end over the start; airDb = a breath of high air; notes = [second, Hz, dB under the pad] soft glass notes. FR : tous les nombres des neuf versions sont ici. crestTarget = the second where the loudest moment should land; the script moves peakAt (up to 4 tries) until the measured crest is within 0.08 s of it. FR : crestTarget = l'instant visé du sommet. rise = exponent of the swell's rising curve (higher = a slower, softer start).",
+  "defaults": {
+    "stretch": 1.75,
+    "pitchSt": 0,
+    "lowpassHz": 3500,
+    "peakAt": 1.45,
+    "fadeOutFrom": 2.2,
+    "verbWet": 0.3,
+    "verbSec": 1.8,
+    "subHz": null,
+    "subDb": null,
+    "subRise": 1.0,
+    "airDb": null,
+    "notes": [],
+    "crestTarget": 1.417,
+    "rise": 1.6
+  },
+  "targetLufs": -26.0,
+  "variants": {
+    "F1": {
+      "name": "Voile clair"
+    },
+    "F2": {
+      "name": "Voile sombre",
+      "pitchSt": -3,
+      "lowpassHz": 2200,
+      "verbWet": 0.4
+    },
+    "F3": {
+      "name": "Voile aérien",
+      "pitchSt": 5,
+      "lowpassHz": 6500,
+      "verbWet": 0.35,
+      "airDb": -34,
+      "stretch": 2.3
+    },
+    "F4": {
+      "name": "Souffle",
+      "lowpassHz": 3000,
+      "subHz": 55,
+      "subDb": -24,
+      "airDb": -38
+    },
+    "F5": {
+      "name": "Souffle profond",
+      "pitchSt": -5,
+      "lowpassHz": 2500,
+      "subHz": 41.2,
+      "subDb": -20,
+      "airDb": -42,
+      "verbWet": 0.35,
+      "stretch": 1.3,
+      "rise": 2.6
+    },
+    "F6": {
+      "name": "Souffle qui monte",
+      "subHz": 55,
+      "subDb": -26,
+      "subRise": 1.12,
+      "airDb": -32,
+      "peakAt": 1.6,
+      "crestTarget": 1.6
+    },
+    "F7": {
+      "name": "Cristal, une note",
+      "lowpassHz": 3000,
+      "notes": [
+        [
+          1.417,
+          659.3,
+          -26
+        ]
+      ]
+    },
+    "F8": {
+      "name": "Cristal, deux notes",
+      "lowpassHz": 3000,
+      "notes": [
+        [
+          0.733,
+          659.3,
+          -30
+        ],
+        [
+          1.417,
+          987.8,
+          -26
+        ]
+      ]
+    },
+    "F9": {
+      "name": "Cristal, trois notes",
+      "lowpassHz": 3000,
+      "notes": [
+        [
+          0.733,
+          659.3,
+          -30
+        ],
+        [
+          1.417,
+          987.8,
+          -26
+        ],
+        [
+          1.95,
+          1661.2,
+          -32
+        ]
+      ]
+    }
+  }
+}

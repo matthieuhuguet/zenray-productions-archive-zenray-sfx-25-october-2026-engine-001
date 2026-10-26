@@ -175,7 +175,7 @@ def main():
     (ROOT / "params/proposals" / f"{FILM}.v2.briefs.json.txt").write_text("\n\n".join(f"## sfx1-{k}\n{B.to_text(b)}" for (t, k), b in brief_of.items()))
     sheet(made)
 
-def sheet(made):
+def sheet(made, fname="sheet-v2.png"):
     """Spectrograms on the film's 6 s timeline (PIL, no matplotlib): cue lines white, lens and aberration start blue."""
     import librosa
     from PIL import Image, ImageDraw
@@ -187,7 +187,7 @@ def sheet(made):
     for c, t in CUES.items():
         hot = c in ("lens", "aberrationStart"); d.line([(x(t), 0), (x(t), H * len(made))], fill=(126, 200, 255) if hot else (90, 90, 90), width=2 if hot else 1)
         d.text((x(t) + 2, H * len(made) + 6 + (10 if hot else 0)), c, fill=(126, 200, 255) if hot else (150, 150, 150))
-    img.save(OUT / "sheet-v2.png")
+    img.save(OUT / fname)
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,101 @@
+{
+ "F1": {
+  "name": "Voile clair",
+  "lufs": -26.0,
+  "peakDb": -8.72,
+  "maxRiseDb100ms": 4.1,
+  "jumpAtClimaxDb": 4.0,
+  "centroidHz": 547,
+  "crestAt": 1.4,
+  "endsSilent": true
+ },
+ "F2": {
+  "name": "Voile sombre",
+  "lufs": -26.0,
+  "peakDb": -8.29,
+  "maxRiseDb100ms": 7.0,
+  "jumpAtClimaxDb": -0.9,
+  "centroidHz": 390,
+  "crestAt": 1.25,
+  "endsSilent": true
+ },
+ "F3": {
+  "name": "Voile aérien",
+  "lufs": -26.0,
+  "peakDb": -10.97,
+  "maxRiseDb100ms": 6.0,
+  "jumpAtClimaxDb": 1.8,
+  "centroidHz": 1714,
+  "crestAt": 1.4,
+  "endsSilent": true
+ },
+ "F4": {
+  "name": "Souffle",
+  "lufs": -26.0,
+  "peakDb": -8.93,
+  "maxRiseDb100ms": 4.0,
+  "jumpAtClimaxDb": 4.1,
+  "centroidHz": 765,
+  "crestAt": 1.4,
+  "endsSilent": true
+ },
+ "F5": {
+  "name": "Souffle profond",
+  "lufs": -26.0,
+  "peakDb": -8.55,
+  "maxRiseDb100ms": 5.0,
+  "jumpAtClimaxDb": -0.6,
+  "centroidHz": 528,
+  "crestAt": 1.25,
+  "endsSilent": true
+ },
+ "F6": {
+  "name": "Souffle qui monte",
+  "lufs": -26.0,
+  "peakDb": -8.85,
+  "maxRiseDb100ms": 4.1,
+  "jumpAtClimaxDb": 4.6,
+  "centroidHz": 1105,
+  "crestAt": 1.8,
+  "endsSilent": true
+ },
+ "F7": {
+  "name": "Cristal, une note",
+  "lufs": -26.0,
+  "peakDb": -8.72,
+  "maxRiseDb100ms": 4.1,
+  "jumpAtClimaxDb": 4.0,
+  "centroidHz": 538,
+  "crestAt": 1.4,
+  "endsSilent": true
+ },
+ "F8": {
+  "name": "Cristal, deux notes",
+  "lufs": -26.0,
+  "peakDb": -8.7,
+  "maxRiseDb100ms": 4.1,
+  "jumpAtClimaxDb": 4.0,
+  "centroidHz": 583,
+  "crestAt": 1.4,
+  "endsSilent": true
+ },
+ "F9": {
+  "name": "Cristal, trois notes",
+  "lufs": -26.0,
+  "peakDb": -8.7,
+  "maxRiseDb100ms": 4.1,
+  "jumpAtClimaxDb": 4.0,
+  "centroidHz": 664,
+  "crestAt": 1.4,
+  "endsSilent": true
+ },
+ "E1": {
+  "name": "E1",
+  "lufs": -22.0,
+  "maxRiseDb100ms": 9.8,
+  "jumpAtClimaxDb": -10.3,
+  "centroidHz": 990,
+  "crestAt": 0.65,
+  "endsSilent": true
+ }
+}

@@ -1,0 +1,81 @@
+{
+ "film": "zenray-sony-playstation-d-ppm",
+ "date": "26 October 2026",
+ "cues": {
+  "firstLight": 0.417,
+  "lightFull": 0.85,
+  "lens": 1.667,
+  "wordSpread": 1.517,
+  "blueOnset": 2.183,
+  "beam": 2.333,
+  "flarePeak": 3.15,
+  "flareGone": 3.467,
+  "tileAppears": 3.733,
+  "whiteFlip": 3.883,
+  "settle": 4.617,
+  "fadeStart": 5.283,
+  "fadeEnd": 5.95,
+  "aberrationStart": 4.417,
+  "aberrationEnd": 5.417
+ },
+ "tracks": {
+  "sfx2": {
+   "label": "Progression vers une autre dimension",
+   "start": 3.0,
+   "main": "aberrationStart",
+   "anchors": [
+    {
+     "cue": "aberrationStart",
+     "role": "band"
+    }
+   ],
+   "proposals": {
+    "F1": {
+     "name": "Voile clair",
+     "hitAt": 1.4,
+     "note": "variation douce de sfx2-E1"
+    },
+    "F2": {
+     "name": "Voile sombre",
+     "hitAt": 1.25,
+     "note": "variation douce de sfx2-E1"
+    },
+    "F3": {
+     "name": "Voile aérien",
+     "hitAt": 1.4,
+     "note": "variation douce de sfx2-E1"
+    },
+    "F4": {
+     "name": "Souffle",
+     "hitAt": 1.4,
+     "note": "variation douce de sfx2-E1"
+    },
+    "F5": {
+     "name": "Souffle profond",
+     "hitAt": 1.25,
+     "note": "variation douce de sfx2-E1"
+    },
+    "F6": {
+     "name": "Souffle qui monte",
+     "hitAt": 1.8,
+     "note": "variation douce de sfx2-E1"
+    },
+    "F7": {
+     "name": "Cristal, une note",
+     "hitAt": 1.4,
+     "note": "variation douce de sfx2-E1"
+    },
+    "F8": {
+     "name": "Cristal, deux notes",
+     "hitAt": 1.4,
+     "note": "variation douce de sfx2-E1"
+    },
+    "F9": {
+     "name": "Cristal, trois notes",
+     "hitAt": 1.4,
+     "note": "variation douce de sfx2-E1"
+    }
+   }
+  }
+ }
+}
