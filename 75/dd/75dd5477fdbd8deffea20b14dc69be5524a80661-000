@@ -20,9 +20,13 @@ def stems(log=None):
 def put(y, start):
     out = np.zeros((N6, 2), np.float32); a = int(round(start * SR)); seg = y[:max(0, N6 - a)]; out[a:a + len(seg)] = seg; return out
 
-def layers(d):
-    body, s1, s2, log = stems()
-    return put(body, max(0.0, TR["noteOnset"] - NP["lead"])) * db(TR["noteDb"]), put(s1, d), put(s2, TR["son2At"]), log
+def onset_seconds(o):
+    return float(o["at"]) if "at" in o else N.cue_time(o["cue"])
+
+def layers(d, onset=None):
+    """The three layers of the track (note with its level, sound 1 delayed by d, sound 2) and the log of the normalisation. `onset` = where the note itself begins (seconds)."""
+    body, s1, s2, log = stems(); o = TR["noteOnset"] if onset is None else onset
+    return put(body, max(0.0, o - NP["lead"])) * db(TR["noteDb"]), put(s1, d), put(s2, TR["son2At"]), log
 
 def build():
     rows = {}

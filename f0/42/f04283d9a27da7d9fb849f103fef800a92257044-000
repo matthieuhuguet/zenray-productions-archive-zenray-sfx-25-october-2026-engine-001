@@ -96,6 +96,54 @@
       "truePeakDb": -1.0,
       "lra": 11,
       "video": "out/f-final/F-silent.mp4"
+    },
+    "sets": {
+      "start": {
+        "_doc": "the note at the start, sound 1 delayed by a micro-offset",
+        "items": {
+          "d060": {
+            "delay": 0.06,
+            "onset": {
+              "at": 0.0
+            }
+          },
+          "d120": {
+            "delay": 0.12,
+            "onset": {
+              "at": 0.0
+            }
+          },
+          "d180": {
+            "delay": 0.18,
+            "onset": {
+              "at": 0.0
+            }
+          }
+        }
+      },
+      "logo": {
+        "_doc": "26 October 2026 (Matthieu: put the Ghibli note exactly when the logo appears, around 3 s or 3.5 s): sound 1 and sound 2 play as they are, the note begins on a cue of the film: the flare that swallows the word (3.15 s), the glass plate of the logo (3.733 s), the white tile with the mark (3.883 s). Cue times are read from the project's cues.json.",
+        "items": {
+          "flare": {
+            "delay": 0.0,
+            "onset": {
+              "cue": "flarePeak"
+            }
+          },
+          "plate": {
+            "delay": 0.0,
+            "onset": {
+              "cue": "tileAppears"
+            }
+          },
+          "tile": {
+            "delay": 0.0,
+            "onset": {
+              "cue": "whiteFlip"
+            }
+          }
+        }
+      }
     }
   }
 }
