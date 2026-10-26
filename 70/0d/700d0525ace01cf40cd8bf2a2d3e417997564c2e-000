@@ -1,0 +1,38 @@
+{
+ "son1-v1": {
+  "name": "Musique devant",
+  "samples": 144000,
+  "lufs": -24.0,
+  "peakDb": -10.99
+ },
+ "son1-v2": {
+  "name": "Équilibré",
+  "samples": 144000,
+  "lufs": -24.0,
+  "peakDb": -9.58
+ },
+ "son1-v3": {
+  "name": "Effets devant",
+  "samples": 144000,
+  "lufs": -24.0,
+  "peakDb": -7.38
+ },
+ "son2-v1": {
+  "name": "Musique devant",
+  "samples": 144000,
+  "lufs": -24.0,
+  "peakDb": -11.02
+ },
+ "son2-v2": {
+  "name": "Équilibré",
+  "samples": 144000,
+  "lufs": -24.0,
+  "peakDb": -10.11
+ },
+ "son2-v3": {
+  "name": "Effets devant",
+  "samples": 144000,
+  "lufs": -24.0,
+  "peakDb": -9.43
+ }
+}

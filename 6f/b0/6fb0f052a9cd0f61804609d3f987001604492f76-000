@@ -1,0 +1,61 @@
+# 26 October 2026: assembles the 6 s film audio (see params/assembly.json for the why and every number).
+# Writes out/assembly/{video-0-3s,video-3-6s,video-0-6s}.wav (the cuts, 0.33 s fades), out/assembly/son1-v1..v3.wav (film 0-3 s) and
+# son2-v1..v3.wav (film 3-6 s), plus out/assembly/measures.json. --check verifies, --check --red must fail.
+# FR : assemble l'audio du film de 6 s : coupes de la vidéo, son 1 et son 2 en trois versions chacun.
+import json, re, subprocess, sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT))
+import numpy as np, soundfile as sf
+P = json.loads((ROOT / "params/assembly.json").read_text()); SR = 48000; N3 = 3 * SR; OUT = ROOT / "out/assembly"; OUT.mkdir(parents=True, exist_ok=True)
+db = lambda x: 10 ** (x / 20)
+
+def fade(y, s):
+    y = y.copy(); n = int(round(s * SR)); r = np.sin(0.5 * np.pi * np.linspace(0, 1, n)) ** 2   # raised sine: no click at either end
+    y[:n] *= r[:, None]; y[-n:] *= r[::-1, None]; return y
+
+def lufs(y):
+    f = OUT / "_t.wav"; sf.write(f, y, SR, subtype="FLOAT")
+    r = subprocess.run(["ffmpeg", "-nostats", "-i", str(f), "-af", "ebur128=peak=true", "-f", "null", "-"], capture_output=True, text=True)
+    return float(re.findall(r"I:\s+(-?\d+\.\d+) LUFS", r.stderr)[-1])
+
+def mono_to_stereo(m): return np.stack([m, m], 1).astype(np.float32)
+def load(key):
+    y, sr = sf.read(ROOT / P["files"][key], dtype="float32"); assert sr == SR and y.ndim == 1, key; return y
+def place(m, start, n=N3):
+    out = np.zeros(n, np.float32); a = int(round(start * SR)); seg = m[:max(0, n - a)]; out[a:a + len(seg)] = seg; return out
+
+def build():
+    V, sr = sf.read(ROOT / P["source"], dtype="float32"); assert sr == SR and V.shape == (6 * SR, 2)
+    cuts = {"video-0-3s": fade(V[:N3], P["fade"]), "video-3-6s": fade(V[N3:], P["fade"]), "video-0-6s": fade(V, P["fade"])}
+    for k, y in cuts.items(): sf.write(OUT / f"{k}.wav", y, SR, subtype="PCM_24")
+    b1s, g2, j2 = load("b1s"), load("g2"), load("j2")
+    stems = {"son1": {"music": cuts["video-0-3s"], "sfx": mono_to_stereo(place(b1s, P["b1sStart"]) + db(P["g2UnderB1sDb"]) * place(g2, 0.0))},
+             "son2": {"music": cuts["video-3-6s"], "sfx": mono_to_stereo(place(j2, 0.0))}}
+    rows = {}
+    for sname, st in stems.items():
+        eq = {k: v * db(P["stemLufs"] - lufs(v)) for k, v in st.items()}      # both stems at the same loudness before the versions' offsets
+        for vk, v in P["versions"].items():
+            mix = eq["music"] * db(v["musicDb"]) + eq["sfx"] * db(v["sfxDb"]); mix = mix * db(P["finalLufs"] - lufs(mix))
+            if np.abs(mix).max() > db(P["peakDb"]): mix *= db(P["peakDb"]) / np.abs(mix).max()
+            sf.write(OUT / f"{sname}-v{vk}.wav", mix, SR, subtype="PCM_24")
+            rows[f"{sname}-v{vk}"] = {"name": v["name"], "samples": len(mix), "lufs": round(lufs(mix), 2), "peakDb": round(float(20 * np.log10(np.abs(mix).max())), 2)}
+            print(f"{sname}-v{vk}", rows[f"{sname}-v{vk}"])
+        json.dump({k: v.tolist() for k, v in {}.items()}, open(OUT / "_x", "w")) if False else None
+    (OUT / "measures.json").write_text(json.dumps(rows, indent=1, ensure_ascii=False)); (OUT / "_t.wav").unlink(missing_ok=True)
+
+def check(red):
+    """Each version must equal gain-weighted music + effects (solved by least squares on the stems), have exactly 144000 samples, and not clip."""
+    V, _ = sf.read(ROOT / P["source"], dtype="float32"); cuts = {"son1": fade(V[:N3], P["fade"]), "son2": fade(V[N3:], P["fade"])}
+    b1s, g2, j2 = load("b1s"), load("g2"), load("j2")
+    sfx = {"son1": mono_to_stereo(place(b1s, P["b1sStart"]) + db(P["g2UnderB1sDb"]) * place(g2, 0.0)), "son2": mono_to_stereo(place(j2, 0.0))}; bad = 0
+    for sname in cuts:
+        for vk in P["versions"]:
+            y, _ = sf.read(OUT / f"{sname}-v{vk}.wav", dtype="float32"); s = sfx[sname]
+            if red: s = np.roll(s, 1, axis=0)                          # a one-sample misalignment of the effects
+            A = np.stack([cuts[sname].ravel(), s.ravel()], 1); coef, *_ = np.linalg.lstsq(A, y.ravel(), rcond=None); err = float(np.sqrt(((A @ coef - y.ravel()) ** 2).mean()) / np.sqrt((y ** 2).mean()))
+            ok = y.shape == (N3, 2) and err < 2e-3 and np.abs(y).max() < 0.99; bad += not ok
+            print(("ok   " if ok else "FAIL ") + f"{sname}-v{vk}: samples {len(y)}, relative error vs music+effects {err:.5f}, music gain {coef[0]:.3f}, effects gain {coef[1]:.3f}")
+    sys.exit(1 if bad else 0)
+
+if __name__ == "__main__":
+    check("--red" in sys.argv) if "--check" in sys.argv else build()
