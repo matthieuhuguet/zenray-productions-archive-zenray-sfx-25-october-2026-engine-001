@@ -1,0 +1,175 @@
+# 26 October 2026: second round of the sound of "ZenRay, Sony puis PlayStation, rythme D", after Matthieu's listening.
+# His words: almost all of round 1 was bad; sfx1-B was nearly right but good for ONE second only (the first one); for sfx2 reuse
+# the Death Stranding sounds that were already good and fit them. So: sfx1 = three variations of B's first second with one shared
+# short clean ending (B1 air, B2 dark and wide, B3 steeper rise); sfx2 = three arrangements of the Death Stranding recipes
+# (pitch, time, weight, space macros, layering, reverse), aligned on the film cues. No sample of the game is stored: the recipes
+# are numbers rendered again. FR : deuxième tour après l'écoute ; sfx1 itère sur la première seconde de B, sfx2 réemploie les sons Death Stranding.
+# Usage: /usr/bin/python3 Scripts/DesignRhythmD2.py   (writes out/proposals/<film>/{sfx1-B1..B3,sfx2-D1..D3}.wav, sheet-v2.png, measures-v2.json)
+import copy, json, re, subprocess, sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(ROOT / "Scripts"))
+import numpy as np, soundfile as sf
+import DesignRhythmD as D
+from zrsfx import brief as B, compose as C
+
+SR, PEAK_DB, TARGET_LUFS = 48000, -3.0, -24.4          # same loudness as round 1 so the two rounds compare fairly
+FILM = D.SPEC["film"]; CUES = D.CUES; OUT = ROOT / "out/proposals" / FILM; OUT.mkdir(parents=True, exist_ok=True)
+o, q, ev, tone, noise = D.o, D.q, D.ev, D.tone, D.noise
+AIR_HI, AIR_MID, HISS, THUD, CLICK, GLASS, SAW = D.AIR_HI, D.AIR_MID, D.HISS, D.THUD, D.CLICK, D.GLASS, D.SAW
+
+# ------------------------------------------------------------------ sfx1: variations of the first second of B
+LENS = o("lens")                                    # 1.317 s from the track start
+def ending():
+    """One short clean ending shared by B1..B3: the deep hit on the lens, its click, a short bell. The long tail of round 1 is cut."""
+    e = [ev(LENS, [[0, -60], [6, 0], [200, -10], [800, -60]], None, noise(THUD, -10)),
+         ev(LENS, [[0, -60], [5, 0], [320, -14], [900, -60]], tone(48, [(1, 0), (2, -8), (3, -14)], -10, glide=-7)),
+         ev(LENS + 0.01, [[0, -60], [8, 0], [90, -22], [400, -60]], None, noise(D.CLICK, -26))]
+    e += D.bell(LENS, 1568, -30, 1000)
+    return e
+
+def intro(drones=((55.0, 0, -18, 1250), (82.4, -4, -24, 1000), (110.0, -6, -26, 900)), strings=(1.0, 1.0035), air=-38, glide=0.0, shape=None):
+    """B's first second, as written in round 1, with the knobs the variations turn. Defaults = round 1 exactly."""
+    e = []
+    for f, rel, lvl, att in drones:
+        pts = shape(att) if shape else [[0, -60], [att, 0], [att + 160, -6], [att + 900, -60]]
+        e.append(ev(o("firstLight"), pts, tone(f, [(1, 0), (2, -7), (3, -12), (4, -16)], lvl + rel, glide=glide)))
+    for det in strings:
+        e.append(ev(o("lightFull") - 0.1, [[0, -60], [950, -6], [1050, -8], [1700, -60]], tone(220.0 * det, SAW, -34, glide=glide)))
+    e.append(ev(o("lightFull"), [[0, -60], [820, -16], [1000, -50]], None, noise(AIR_MID, air, sweep=1.0)))
+    return e
+
+def sfx1_B1():  # B + air: a thin shimmer of light rises with the swell
+    e = intro() + ending()
+    e.append(ev(o("firstLight"), [[0, -60], [900, -14], [1250, -60]], None, noise(HISS, -40, sweep=1.4)))
+    e.append(ev(o("lightFull"), [[0, -60], [500, -10], [820, -24], [1050, -60]], tone(2349.0, GLASS, -42)))
+    return e
+
+def sfx1_B2():  # B darker and wider: a deeper floor, three detuned strings, a longer swell
+    e = intro(drones=((55.0, 0, -18, 1280), (82.4, -4, -24, 1060), (110.0, -6, -26, 960), (41.2, -2, -22, 1300)), strings=(0.9965, 1.0, 1.0035), air=-41) + ending()
+    return e
+
+def sfx1_B3():  # B steeper: slow start, quick finish, strings climb two semitones into the lens
+    steep = lambda att: [[0, -60], [att * 0.55, -22], [att, 0], [att + 160, -6], [att + 900, -60]]
+    return intro(shape=steep, glide=2.0, air=-36) + ending()
+
+SFX1 = {"B1": ("B plus d'air", sfx1_B1), "B2": ("B plus sombre et large", sfx1_B2), "B3": ("B montée plus raide", sfx1_B3)}
+
+# ------------------------------------------------------------------ sfx2: Death Stranding recipes, fitted
+_cache = {}
+def ds(name, **macros):
+    """Render a Death Stranding recipe with the macro panel (pitch st, time x, weight, bright, space, gain dB). Trailing silence stays."""
+    key = (name, json.dumps(macros, sort_keys=True))
+    if key not in _cache:
+        r = json.loads((ROOT / "out/repro-03" / f"{name}.recipe.json").read_text())
+        y = C.render_any(C.apply_macros_recipe(r, macros), SR); _cache[key] = np.asarray(y, np.float32)
+    return _cache[key]
+
+def frames(y, ms=20):
+    n = int(ms / 1000 * SR); k = max(1, len(y) // n); return np.sqrt((y[:k * n].reshape(k, n) ** 2).mean(1)) if len(y) >= n else np.abs(y)
+
+def hit(y):    return (np.argmax(frames(y)) + 0.5) * 0.02
+def onset(y):
+    f = frames(y); return float(np.argmax(f >= f.max() * 10 ** (-30 / 20))) * 0.02
+
+class Mix:
+    def __init__(self, seconds): self.y = np.zeros(int(seconds * SR), np.float32)
+    def put(self, y, t, db=0.0, align="start", fade_in=0.0, fade_out=0.0, reverse=False):
+        y = (y[::-1] if reverse else y).copy() * 10 ** (db / 20)
+        t0 = {"start": t, "hit": t - (hit(y)), "onset": t - onset(y), "end": t - len(y) / SR}[align]
+        if fade_in:  n = min(len(y), int(fade_in * SR)); y[:n] *= np.linspace(0, 1, n) ** 1.5
+        if fade_out: n = min(len(y), int(fade_out * SR)); y[-n:] *= np.linspace(1, 0, n)
+        a = int(round(t0 * SR)); s = max(0, -a); seg = y[s:s + max(0, len(self.y) - max(a, 0))]
+        self.y[max(a, 0):max(a, 0) + len(seg)] += seg; return self
+
+CLIMAX = q("aberrationStart")                       # 1.417 s from the track start
+def sfx2_D1():  # chargement : the same pad stacked in rising steps, then the Death Stranding "close" hit and a mail-open door
+    m = Mix(3.0)
+    for i, (t, st, db) in enumerate(((0.00, -12, -24), (0.45, -7, -21), (0.90, -3, -19), (1.25, 0, -17))):
+        m.put(ds("15-TimeFall-Shelter", pitch=st, time=0.8, space=0.1), t, db, "start", fade_in=0.25, fade_out=0.15)
+    m.put(ds("25-Inv-Close-End", pitch=-7, weight=0.5, space=0.4), CLIMAX, 0, "onset")
+    m.put(ds("10-Mail-Open", pitch=-12, time=1.6, space=0.5), CLIMAX, -5, "onset")
+    m.put(ds("21-Awaiting-Signal", pitch=12, space=0.5), CLIMAX + 0.45, -16, "onset", fade_out=0.6)
+    return m.y
+
+def sfx2_D2():  # impulsions : cufflink clicks that speed up and climb, then one heavy pad
+    m = Mix(3.0); n = 13
+    for i in range(n):
+        u = (i / (n - 1)) ** 1.9; t = 0.1 + (CLIMAX - 0.12 - 0.1) * u
+        m.put(ds("3-Cufflinks-Open", pitch=-5 + 7 * i / n, time=0.5), t, -26 + 8 * i / n, "onset")
+    m.put(ds("12-Denied", pitch=-12, weight=0.6, space=0.4), CLIMAX, 0, "onset")
+    m.put(ds("15-TimeFall-Shelter", pitch=-5, weight=0.4, space=0.6), CLIMAX, -15, "onset", fade_out=0.9)
+    m.put(ds("21-Awaiting-Signal", pitch=7, space=0.4), CLIMAX + 0.8, -18, "onset", fade_out=0.6)
+    return m.y
+
+def sfx2_D3():  # porte : a reversed, stretched mail-open swell that lands on the climax, a wide hit, a floating high pad and pings
+    m = Mix(3.0)
+    m.put(ds("10-Mail-Open", pitch=-5, time=2.0, space=0.3), CLIMAX, -19, "end", fade_in=0.3, reverse=True)
+    m.put(ds("15-TimeFall-Shelter", pitch=-12, weight=0.3, space=0.3), 0.0, -23, "start", fade_in=0.7, fade_out=0.1)
+    m.put(ds("12-Denied", pitch=-12, weight=0.6, space=0.8), CLIMAX, 0, "onset")
+    m.put(ds("25-Inv-Close-End", pitch=-12, weight=0.6, space=0.8), CLIMAX, -4, "onset")
+    m.put(ds("15-TimeFall-Shelter", pitch=12, time=1.2, space=0.7), CLIMAX + 0.1, -20, "onset", fade_in=0.4, fade_out=0.9)
+    for dt, db in ((0.35, -16), (0.75, -20), (1.2, -25)):
+        m.put(ds("21-Awaiting-Signal", pitch=12, space=0.6), CLIMAX + dt, db, "onset", fade_out=0.3)
+    return m.y
+
+SFX2 = {"D1": ("Chargement en marches (Death Stranding)", sfx2_D1), "D2": ("Impulsions qui s'accélèrent (Death Stranding)", sfx2_D2), "D3": ("Porte inversée (Death Stranding)", sfx2_D3)}
+
+# ------------------------------------------------------------------ render, balance, measure
+def lufs(f):
+    r = subprocess.run(["ffmpeg", "-nostats", "-i", str(f), "-af", "ebur128=peak=true", "-f", "null", "-"], capture_output=True, text=True)
+    return float(re.findall(r"I:\s+(-?\d+\.\d+) LUFS", r.stderr)[-1])
+
+def jump(y, t):
+    """How much louder the 120 ms starting at the cue is than the 300 ms before it: the climax must be heard as a step up."""
+    r = lambda a, b: 20 * np.log10(np.sqrt((y[int(a * SR):int(b * SR)] ** 2).mean()) + 1e-9)
+    return round(float(r(t, t + 0.12) - r(t - 0.35, t - 0.05)), 1)
+
+def finish(y, seconds):
+    y = np.asarray(y, np.float32)[:int(seconds * SR)]; y = np.pad(y, (0, int(seconds * SR) - len(y)))
+    y[-int(0.06 * SR):] *= np.linspace(1, 0, int(0.06 * SR)); return y / max(np.abs(y).max(), 1e-9) * 10 ** (PEAK_DB / 20)
+
+def main():
+    cues = {"sfx1": ("lens", LENS), "sfx2": ("aberrationStart", CLIMAX)}; rows, made = {}, {}
+    brief_of = {}
+    for k, (name, fn) in SFX1.items():
+        ev_ = fn(); br = {"name": f"sfx1-{k}", "seconds": 2.45, "seed": 0, "events": ev_, "space": 0.55}
+        assert B.to_text(B.from_text(B.to_text(br))) == B.to_text(br), f"sfx1-{k} text round trip"
+        made[("sfx1", k)] = (name, finish(C.render_any(br, SR), 2.45), D.S1); brief_of[("sfx1", k)] = br
+    for k, (name, fn) in SFX2.items():
+        made[("sfx2", k)] = (name, finish(fn(), 3.0), D.S2)
+    for (tid, k), (name, y, start) in made.items():
+        f = OUT / f"{tid}-{k}.wav"; sf.write(f, y, SR, subtype="PCM_24"); g = TARGET_LUFS - lufs(f)
+        y2 = y * 10 ** (g / 20)
+        if np.abs(y2).max() > 10 ** (-1 / 20):  # keep a safe peak, the loudness shortfall is reported
+            y2 *= 10 ** (-1 / 20) / np.abs(y2).max()
+        sf.write(f, y2.astype(np.float32), SR, subtype="PCM_24"); made[(tid, k)] = (name, y2, start)
+        rows[f"{tid}-{k}"] = {"name": name, "start": start, "seconds": round(len(y2) / SR, 3), "peakDb": round(float(20 * np.log10(np.abs(y2).max())), 2), "lufs": round(lufs(f), 2),
+                              "hitAt": round(float(hit(y2)), 3), "wanted": cues[tid][1], "jumpDb": jump(y2, cues[tid][1])}
+        print(f"{tid}-{k}", rows[f'{tid}-{k}'])
+    # round 1's B, first second only, as a reference the listener can compare with (with a short fade)
+    old, _ = sf.read(OUT / "sfx1-B.wav"); one = old[:SR].copy(); one[-int(0.05 * SR):] *= np.linspace(1, 0, int(0.05 * SR)); sf.write(OUT / "sfx1-B-premiere-seconde.wav", one.astype(np.float32), SR, subtype="PCM_24")
+    (OUT / "measures-v2.json").write_text(json.dumps(rows, indent=1, ensure_ascii=False))
+    # the spec the index reads (kind sfx-proposal, family film/track, switchable with A B C of round 1)
+    spec = {"film": FILM, "date": "26 October 2026", "cues": CUES, "tracks": {
+        "sfx1": {"label": "La lentille sur le R", "start": D.S1, "main": "lens", "anchors": [{"cue": "lens", "role": "onset"}], "proposals": {k: {"name": v[0]} for k, v in SFX1.items()}},
+        "sfx2": {"label": "Progression vers une autre dimension", "start": D.S2, "main": "aberrationStart", "anchors": [{"cue": "aberrationStart", "role": "band"}], "proposals": {k: {"name": v[0]} for k, v in SFX2.items()}}}}
+    (ROOT / "params/proposals" / f"{FILM}.v2.json").write_text(json.dumps(spec, indent=1, ensure_ascii=False))
+    (ROOT / "params/proposals" / f"{FILM}.v2.briefs.json.txt").write_text("\n\n".join(f"## sfx1-{k}\n{B.to_text(b)}" for (t, k), b in brief_of.items()))
+    sheet(made)
+
+def sheet(made):
+    """Spectrograms on the film's 6 s timeline (PIL, no matplotlib): cue lines white, lens and aberration start blue."""
+    import librosa
+    from PIL import Image, ImageDraw
+    W, H, L = 1500, 150, 130; img = Image.new("RGB", (L + W, H * len(made) + 30), (14, 13, 12)); d = ImageDraw.Draw(img); x = lambda t: L + int(t / 6.0 * W)
+    for i, (key, (name, y, start)) in enumerate(made.items()):
+        M = librosa.power_to_db(librosa.feature.melspectrogram(y=y, sr=SR, n_fft=2048, hop_length=256, n_mels=128), ref=1.0)
+        a = np.clip((M + 90) / 80, 0, 1)[::-1]; tile = Image.fromarray((np.stack([a ** 0.6, a ** 1.5, a ** 3], -1) * 255).astype(np.uint8)).resize((x(start + len(y) / SR) - x(start), H - 10))
+        img.paste(tile, (x(start), i * H + 5)); d.text((6, i * H + 8), f"{key[0]}-{key[1]}", fill=(255, 255, 255)); d.text((6, i * H + 24), name[:20], fill=(170, 170, 170))
+    for c, t in CUES.items():
+        hot = c in ("lens", "aberrationStart"); d.line([(x(t), 0), (x(t), H * len(made))], fill=(126, 200, 255) if hot else (90, 90, 90), width=2 if hot else 1)
+        d.text((x(t) + 2, H * len(made) + 6 + (10 if hot else 0)), c, fill=(126, 200, 255) if hot else (150, 150, 150))
+    img.save(OUT / "sheet-v2.png")
+
+if __name__ == "__main__":
+    main()

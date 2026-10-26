@@ -1,0 +1,62 @@
+{
+ "sfx1-B1": {
+  "name": "B plus d'air",
+  "start": 0.35,
+  "seconds": 2.45,
+  "peakDb": -2.4,
+  "lufs": -24.4,
+  "hitAt": 1.35,
+  "wanted": 1.317,
+  "jumpDb": 15.1
+ },
+ "sfx1-B2": {
+  "name": "B plus sombre et large",
+  "start": 0.35,
+  "seconds": 2.45,
+  "peakDb": -2.9,
+  "lufs": -24.4,
+  "hitAt": 1.35,
+  "wanted": 1.317,
+  "jumpDb": 15.2
+ },
+ "sfx1-B3": {
+  "name": "B montée plus raide",
+  "start": 0.35,
+  "seconds": 2.45,
+  "peakDb": -2.3,
+  "lufs": -24.4,
+  "hitAt": 1.35,
+  "wanted": 1.317,
+  "jumpDb": 13.3
+ },
+ "sfx2-D1": {
+  "name": "Chargement en marches (Death Stranding)",
+  "start": 3.0,
+  "seconds": 3.0,
+  "peakDb": -3.9,
+  "lufs": -24.4,
+  "hitAt": 1.49,
+  "wanted": 1.417,
+  "jumpDb": 7.2
+ },
+ "sfx2-D2": {
+  "name": "Impulsions qui s'accélèrent (Death Stranding)",
+  "start": 3.0,
+  "seconds": 3.0,
+  "peakDb": -4.5,
+  "lufs": -24.4,
+  "hitAt": 1.75,
+  "wanted": 1.417,
+  "jumpDb": 13.7
+ },
+ "sfx2-D3": {
+  "name": "Porte inversée (Death Stranding)",
+  "start": 3.0,
+  "seconds": 3.0,
+  "peakDb": -5.5,
+  "lufs": -24.4,
+  "hitAt": 1.75,
+  "wanted": 1.417,
+  "jumpDb": 8.9
+ }
+}

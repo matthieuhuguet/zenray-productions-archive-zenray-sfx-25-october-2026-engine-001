@@ -1,0 +1,67 @@
+{
+ "film": "zenray-sony-playstation-d-ppm",
+ "date": "26 October 2026",
+ "cues": {
+  "firstLight": 0.417,
+  "lightFull": 0.85,
+  "lens": 1.667,
+  "wordSpread": 1.517,
+  "blueOnset": 2.183,
+  "beam": 2.333,
+  "flarePeak": 3.15,
+  "flareGone": 3.467,
+  "tileAppears": 3.733,
+  "whiteFlip": 3.883,
+  "settle": 4.617,
+  "fadeStart": 5.283,
+  "fadeEnd": 5.95,
+  "aberrationStart": 4.417,
+  "aberrationEnd": 5.417
+ },
+ "tracks": {
+  "sfx1": {
+   "label": "La lentille sur le R",
+   "start": 0.35,
+   "main": "lens",
+   "anchors": [
+    {
+     "cue": "lens",
+     "role": "onset"
+    }
+   ],
+   "proposals": {
+    "B1": {
+     "name": "B plus d'air"
+    },
+    "B2": {
+     "name": "B plus sombre et large"
+    },
+    "B3": {
+     "name": "B montée plus raide"
+    }
+   }
+  },
+  "sfx2": {
+   "label": "Progression vers une autre dimension",
+   "start": 3.0,
+   "main": "aberrationStart",
+   "anchors": [
+    {
+     "cue": "aberrationStart",
+     "role": "band"
+    }
+   ],
+   "proposals": {
+    "D1": {
+     "name": "Chargement en marches (Death Stranding)"
+    },
+    "D2": {
+     "name": "Impulsions qui s'accélèrent (Death Stranding)"
+    },
+    "D3": {
+     "name": "Porte inversée (Death Stranding)"
+    }
+   }
+  }
+ }
+}
