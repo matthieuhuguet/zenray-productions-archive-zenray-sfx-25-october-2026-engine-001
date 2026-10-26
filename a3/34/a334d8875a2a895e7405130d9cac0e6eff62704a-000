@@ -35,7 +35,7 @@ def flac_b64(y, sr):
 
 
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument("--run", default="out/repro-03"); ap.add_argument("--out", default="out/listen-01")
+    ap = argparse.ArgumentParser(); ap.add_argument("--run", default="out/repro-03"); ap.add_argument("--out", default="out/listen-01"); ap.add_argument("--refs", default="refs")
     a = ap.parse_args()
     run, out = ROOT / a.run, ROOT / a.out
     out.mkdir(parents=True, exist_ok=True)
@@ -43,7 +43,7 @@ def main():
     rng = np.random.default_rng(int(sum(map(ord, a.run))))
     items, sheet_rows = [], []
     for r in rows:
-        x, sr = sf.read(ROOT / "refs" / f"{r['ref']}.wav"); y, _ = sf.read(run / f"{r['ref']}.wav")
+        x, sr = sf.read(ROOT / a.refs / f"{r['ref']}.wav"); y, _ = sf.read(run / f"{r['ref']}.wav")
         y = y[:len(x)]
         ix, iy = spec_img(x, sr), spec_img(y, sr)
         secret = bool(rng.integers(2))  # True: X is the reproduction

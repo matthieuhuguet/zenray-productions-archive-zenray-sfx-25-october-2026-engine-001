@@ -1,0 +1,17 @@
+[
+ {
+  "ref": "Sony-Apparition-10-17s",
+  "method": "P256G32aEM",
+  "params": 10844,
+  "lines": 77.21,
+  "linesW": 87.34,
+  "floorDb": 3.43,
+  "excessPct": 0.01,
+  "heldInvariant": 99.23,
+  "heldExact": 85.71,
+  "ceiling": 99.2,
+  "seconds": 102.6,
+  "gap": -0.03,
+  "atCeiling": true
+ }
+]

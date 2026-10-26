@@ -1,0 +1,9 @@
+{
+  "_doc": "26 October 2026: three variations of the reproduced Sony apparition (the PlayStation Studios opening animation audio, seconds 10 to 17 with a 1 s fade in and a 1 s fade out), fitted to the 3 s track of the film (starts 3.0 s, crest at the aberration start 1.417 s). Macros are those of the ZenRay SFX panel (pitch st, time x, weight, bright, space, gain dB). crestAt = the second of the track where the loudest moment of the sound must land; fadeIn and fadeOut in seconds. The reproduced sound is a recipe of numbers, no sample of the video is stored in it. FR : trois variations calées sur la piste de 3 s.",
+  "targetLufs": -25.0, "crestAt": 1.417, "fadeIn": 1.0, "fadeOut": 1.0,
+  "variants": {
+    "H1": {"name": "Fidèle, calé sur l'apparition", "macros": {}},
+    "H2": {"name": "Tout l'arc compressé en 3 s", "macros": {"time": 0.567}},
+    "H3": {"name": "Plus doux et plus profond", "macros": {"weight": 0.25, "bright": -0.3, "space": 0.3}}
+  }
+}

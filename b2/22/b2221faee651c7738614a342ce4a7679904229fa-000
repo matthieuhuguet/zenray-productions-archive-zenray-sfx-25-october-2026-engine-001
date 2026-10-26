@@ -1,0 +1,26 @@
+{
+ "H1": {
+  "name": "Fidèle, calé sur l'apparition",
+  "lufs": -25.0,
+  "peakDb": -7.7,
+  "crestAt": 1.45,
+  "wanted": 1.417,
+  "jumpDb": 2.3
+ },
+ "H2": {
+  "name": "Tout l'arc compressé en 3 s",
+  "lufs": -25.0,
+  "peakDb": -8.2,
+  "crestAt": 1.25,
+  "wanted": 1.417,
+  "jumpDb": 1.4
+ },
+ "H3": {
+  "name": "Plus doux et plus profond",
+  "lufs": -25.0,
+  "peakDb": -6.9,
+  "crestAt": 1.55,
+  "wanted": 1.417,
+  "jumpDb": 1.5
+ }
+}

@@ -24,3 +24,5 @@
   g += np.linalg.pinv(bf) @ (r * w) @ np.linalg.pinv(tt).T / np.maximum(w.mean(), 1e-3)
 /Users/zenray/Create/Build/Productions/GithubProductions/ZenRaySFX/zrsfx/analyze.py:213: RuntimeWarning: invalid value encountered in log10
   d = 10 * np.log10(uniform_filter1d(et, 3) + 1e-20) - 10 * np.log10(uniform_filter1d(en, 3) + 1e-20)
+{"ref": "Sony-Apparition-10-17s", "method": "P256G32aEM", "params": 10844, "lines": 77.21, "linesW": 87.34, "floorDb": 3.43, "excessPct": 0.01, "heldInvariant": 99.23, "heldExact": 85.71, "ceiling": 99.2, "seconds": 102.6, "gap": -0.03, "atCeiling": true}
+mean held-out invariant 99.23 | linesW 87.3 | floorDb 3.4 | excessPct 0.01 | at ceiling 1 / 1

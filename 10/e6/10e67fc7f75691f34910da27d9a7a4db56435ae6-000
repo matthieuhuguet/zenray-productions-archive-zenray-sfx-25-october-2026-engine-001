@@ -1,0 +1,43 @@
+# 26 October 2026: three variations of the REPRODUCED Sony apparition for sfx2 of "ZenRay, Sony puis PlayStation, rythme D".
+# The reproduction (out/repro-sony-01, a ZenRay SFX recipe of the 7 s extract) is rendered with the macros of params/sony-variations.json,
+# the window of 3 s is cut so the loudest moment lands on the aberration start (crestAt), with a 1 s fade in and a 1 s fade out.
+# FR : trois variations de l'apparition Sony reproduite, calées sur la piste de 3 s. Usage: /usr/bin/python3 Scripts/DesignRhythmD6.py [recipe-name]
+import json, re, subprocess, sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(ROOT / "Scripts"))
+import numpy as np, soundfile as sf
+import DesignRhythmD as D
+import DesignRhythmD2 as D2
+from zrsfx import compose as C
+
+SR, FILM, OUT = 48000, D.SPEC["film"], ROOT / "out/proposals" / D.SPEC["film"]
+P = json.loads((ROOT / "params/sony-variations.json").read_text()); NAME = sys.argv[1] if len(sys.argv) > 1 else "Sony-Apparition-10-17s"
+R = json.loads((ROOT / "out/repro-sony-01" / f"{NAME}.recipe.json").read_text()); db = lambda x: 10 ** (x / 20)
+
+def crest(y):
+    k = int(0.2 * SR); e = np.array([np.sqrt((y[i:i + k] ** 2).mean()) for i in range(0, len(y) - k, k // 4)]); return (int(np.argmax(e)) * (k // 4) + k / 2) / SR
+
+def lufs(f):
+    r = subprocess.run(["ffmpeg", "-nostats", "-i", str(f), "-af", "ebur128=peak=true", "-f", "null", "-"], capture_output=True, text=True)
+    return float(re.findall(r"I:\s+(-?\d+\.\d+) LUFS", r.stderr)[-1])
+
+def window(y, at):
+    """A 3 s window whose loudest moment sits at `at` seconds, silence padded where the sound is shorter; fades in and out."""
+    a = int(round((crest(y) - at) * SR)); out = np.zeros(3 * SR, np.float32)
+    seg = y[max(a, 0):max(a, 0) + 3 * SR]; out[max(-a, 0):max(-a, 0) + len(seg)] = seg[:3 * SR - max(-a, 0)]
+    n = int(P["fadeIn"] * SR); out[:n] *= np.linspace(0, 1, n); m = int(P["fadeOut"] * SR); out[-m:] *= np.linspace(1, 0, m); return out
+
+def main():
+    made, rows, props = {}, {}, {}
+    for key, v in P["variants"].items():
+        y = np.asarray(C.render_any(C.apply_macros_recipe(R, v["macros"]), SR), np.float32); w = window(y, P["crestAt"])
+        f = OUT / f"sfx2-{key}.wav"; sf.write(f, w, SR, subtype="PCM_24"); w = w * db(P["targetLufs"] - lufs(f))
+        if np.abs(w).max() > db(-3): w *= db(-3) / np.abs(w).max()
+        sf.write(f, w, SR, subtype="PCM_24"); made[("sfx2", key)] = (v["name"], w, D.S2)
+        rows[key] = {"name": v["name"], "lufs": round(lufs(f), 2), "peakDb": round(float(20 * np.log10(np.abs(w).max())), 2), "crestAt": round(crest(w), 2), "wanted": P["crestAt"], "jumpDb": D2.jump(w, P["crestAt"])}
+        props[key] = {"name": v["name"], "hitAt": rows[key]["crestAt"], "note": "apparition Sony reproduite, variation"}; print(key, rows[key])
+    (OUT / "measures-v6.json").write_text(json.dumps(rows, indent=1, ensure_ascii=False)); D2.sheet(made, "sheet-v6.png")
+    (ROOT / "params/proposals" / f"{FILM}.v6.json").write_text(json.dumps({"film": FILM, "date": "26 October 2026", "cues": D.CUES, "tracks": {"sfx2": {"label": "Progression vers une autre dimension", "start": D.S2, "main": "aberrationStart", "anchors": [{"cue": "aberrationStart", "role": "band"}], "proposals": props}}}, indent=1, ensure_ascii=False))
+
+if __name__ == "__main__":
+    main()
