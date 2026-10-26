@@ -1,0 +1,33 @@
+# 26 October 2026: crackle ("grésillement") measure and repair. Matthieu heard the Sony reproduction crackle while its score was 99.23.
+# Cause measured the same day: the FINE ENVELOPE of the noise layer (a gain curve every 2.5 ms fitted on the reference) is drawn against a NEW
+# noise at every render, so it turns the noise into random bursts (crackle index 3.18 against 1.49 for the reference; without that envelope
+# 0.89). Repair: smooth that envelope (Gaussian, `ms` wide): 60 ms gives 1.80 for -1.05 score, 120 ms 1.28 for -1.44.
+# FR : mesure et réparation du grésillement : l'enveloppe fine du bruit, ajustée sur la référence, découpe un bruit neuf en salves ; on la lisse.
+import numpy as np
+import librosa
+from scipy.ndimage import uniform_filter1d, gaussian_filter1d
+
+def crackle(y, sr=48000):
+    y = y if y.ndim == 1 else y.mean(1); S = np.abs(librosa.stft(np.asarray(y, np.float32), n_fft=1024, hop_length=480)) ** 2
+    f = librosa.fft_frequencies(sr=sr, n_fft=1024); e = 10 * np.log10(S[(f >= 5000) & (f < 12000)].sum(0) + 1e-14)
+    alive = e > e.max() - 45; r = (e - uniform_filter1d(e, 21))[alive]
+    return float(np.std(r))
+
+def hf_level(y, sr=48000):
+    """Mean level in dB of the 6 to 12 kHz band over the frames where the sound is alive (a hiss raises it, a clean sound keeps the reference's)."""
+    y = y if y.ndim == 1 else y.mean(1); S = np.abs(librosa.stft(np.asarray(y, np.float32), n_fft=1024, hop_length=480)) ** 2
+    f = librosa.fft_frequencies(sr=sr, n_fft=1024); e = 10 * np.log10(S[(f >= 6000) & (f < 12000)].mean(0) + 1e-14); tot = 10 * np.log10(S.sum(0) + 1e-14)
+    return float(e[tot > tot.max() - 45].mean())
+
+
+def smooth_noise_env(recipe, ms):
+    """Smooth the fine envelope of every noise layer with a Gaussian of `ms` milliseconds (FWHM). ms = 0 leaves the recipe as fitted."""
+    import copy
+    r = copy.deepcopy(recipe)
+    if not ms:
+        return r
+    for l in r["layers"]:
+        if l["type"] == "noise" and l.get("env"):
+            dt = (l["env"]["t"][1] - l["env"]["t"][0]) * 1000.0
+            l["env"]["db"] = gaussian_filter1d(np.asarray(l["env"]["db"], float), ms / dt / 2.355, mode="nearest").tolist()
+    return r

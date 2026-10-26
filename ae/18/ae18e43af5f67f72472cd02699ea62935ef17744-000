@@ -9,10 +9,12 @@ from zrsfx.render import render
 from zrsfx.polish import polish
 from zrsfx.score import score
 from zrsfx import methods
+from zrsfx.crackle import crackle, smooth_noise_env
 
 ap = argparse.ArgumentParser()
 ap.add_argument("refs", nargs="+"); ap.add_argument("--method", default=methods.DEFAULT)
 ap.add_argument("--run", default="reproduce"); ap.add_argument("--steps", type=int, default=150)
+ap.add_argument("--env-ms", type=float, default=90.0, help="smooth the noise fine envelope (ms) so the render does not crackle; 0 = as fitted")
 a = ap.parse_args()
 out = Path("out") / a.run; out.mkdir(parents=True, exist_ok=True)
 rows = []
@@ -21,6 +23,7 @@ for ref in [p for g in a.refs for p in sorted(glob.glob(g))]:
     r = analyze(x, sr, name=name, **methods.METHODS[a.method])
     if a.steps:
         r = polish(r, x, sr, steps=a.steps)
+    r = smooth_noise_env(r, a.env_ms)   # 26 October 2026: the fitted fine envelope makes a new noise crackle (see zrsfx/crackle.py)
     held = [score(render(r, sr, seed=k), x, sr) for k in (7, 8, 9)]
     ceil = [score(render(r, sr, seed=p), render(r, sr, seed=q), sr)["invariant"] for p, q in ((1, 2), (3, 4), (5, 6))]
     row = {"ref": name, "method": a.method, "params": param_count(r),
@@ -30,7 +33,7 @@ for ref in [p for g in a.refs for p in sorted(glob.glob(g))]:
            "excessPct": round(float(np.mean([h["excessPct"] for h in held])), 2),
            "heldInvariant": round(float(np.mean([h["invariant"] for h in held])), 2),
            "heldExact": round(float(np.mean([h["exact"] for h in held])), 2),
-           "ceiling": round(float(np.mean(ceil)), 2), "seconds": round(time.time() - t0, 1)}
+           "ceiling": round(float(np.mean(ceil)), 2), "crackle": round(float(np.mean([crackle(render(r, sr, seed=k)) for k in (7, 8, 9)])), 2), "referenceCrackle": round(crackle(x, sr), 2), "seconds": round(time.time() - t0, 1)}
     row["gap"] = round(row["ceiling"] - row["heldInvariant"], 2)
     row["atCeiling"] = row["gap"] <= 0.3
     rows.append(row); print(json.dumps(row), flush=True)
