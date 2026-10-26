@@ -1,0 +1,59 @@
+{
+ "ZenRay-Sony-PlayStation-F-final-logo-flare.mp4": {
+  "sound1DelayMs": 0,
+  "noteBeginsAt": 3.15,
+  "integratedLufs": -14.1,
+  "rangeLU": 1.3,
+  "truePeakDb": -1.0,
+  "shortTermLufsEvery0.5s": [
+   -14.3,
+   -14.1,
+   -14.1,
+   -13.8,
+   -13.2,
+   -13.4,
+   -13.9
+  ],
+  "shortTermSpreadLU": 1.1,
+  "gainAppliedDb": 9.3,
+  "masterLagSamples": 0
+ },
+ "ZenRay-Sony-PlayStation-F-final-logo-plate.mp4": {
+  "sound1DelayMs": 0,
+  "noteBeginsAt": 3.733,
+  "integratedLufs": -14.1,
+  "rangeLU": 1.4,
+  "truePeakDb": -1.0,
+  "shortTermLufsEvery0.5s": [
+   -14.3,
+   -14.0,
+   -14.1,
+   -13.9,
+   -13.2,
+   -13.4,
+   -13.9
+  ],
+  "shortTermSpreadLU": 1.1,
+  "gainAppliedDb": 9.3,
+  "masterLagSamples": 0
+ },
+ "ZenRay-Sony-PlayStation-F-final-logo-tile.mp4": {
+  "sound1DelayMs": 0,
+  "noteBeginsAt": 3.883,
+  "integratedLufs": -14.1,
+  "rangeLU": 1.3,
+  "truePeakDb": -1.0,
+  "shortTermLufsEvery0.5s": [
+   -14.3,
+   -14.0,
+   -14.1,
+   -14.0,
+   -13.3,
+   -13.5,
+   -13.9
+  ],
+  "shortTermSpreadLU": 1.0,
+  "gainAppliedDb": 9.3,
+  "masterLagSamples": 0
+ }
+}

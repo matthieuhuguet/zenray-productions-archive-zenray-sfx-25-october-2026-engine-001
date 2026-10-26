@@ -15,7 +15,8 @@
    -13.9
   ],
   "shortTermSpreadLU": 0.6,
-  "gainAppliedDb": 9.4
+  "gainAppliedDb": 9.4,
+  "masterLagSamples": 0
  },
  "ZenRay-Sony-PlayStation-F-final-start-d120.mp4": {
   "sound1DelayMs": 120,
@@ -33,7 +34,8 @@
    -13.9
   ],
   "shortTermSpreadLU": 0.8,
-  "gainAppliedDb": 9.5
+  "gainAppliedDb": 9.5,
+  "masterLagSamples": 0
  },
  "ZenRay-Sony-PlayStation-F-final-start-d180.mp4": {
   "sound1DelayMs": 180,
@@ -51,6 +53,7 @@
    -13.8
   ],
   "shortTermSpreadLU": 0.9,
-  "gainAppliedDb": 9.5
+  "gainAppliedDb": 9.5,
+  "masterLagSamples": 0
  }
 }
